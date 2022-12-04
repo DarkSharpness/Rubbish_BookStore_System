@@ -9,12 +9,17 @@
 namespace dark {
 
 class AccountSystem {
-    struct User {
+    struct User { // simple wrapping
         int index; // Index in the vector
         int book;  // The book selected
     };
     std::vector <User> users;
 
+
+
+};
+
+class BookSystem {
 
 
 };
