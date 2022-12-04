@@ -5,3 +5,4 @@ build/
 docs/README.md
 docs/requirements.md
 docs/bonus.md
+test.cpp
