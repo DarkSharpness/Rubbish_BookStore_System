@@ -1,0 +1,7 @@
+bookstore-testcases/
+*.exe
+build/
+.cache/
+docs/README.md
+docs/requirements.md
+docs/bonus.md
