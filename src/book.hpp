@@ -7,8 +7,7 @@
 
 namespace dark {
 
-class Book {
-  public:
+struct Book {
     string <24> ISBN;        // ISBN
     string <64> Name;        // Name
     string <64> Author;      // Author
@@ -17,14 +16,12 @@ class Book {
     size_t quantity;         // quantitiy of books 
     double cost;             // cost of one book
 
-  private:
     Book() = default;
     Book(const string <24> &_ISBN) {
         ISBN = _ISBN;
         quantity = keywordNum = 0;
         cost = 0.0;
     }
-    double price() const {return cost;}
 
     bool exist() const{return ISBN[0];}
 
@@ -32,8 +29,8 @@ class Book {
         return lhs.ISBN < rhs.ISBN;
     }
     friend std::ostream &operator <<(std::ostream &os, const Book &book) {
-        os << book.ISBN   << '\t' 
-           << book.Name   << '\t' 
+        os << book.ISBN   << '\t'
+           << book.Name   << '\t'
            << book.Author << '\t'
            << book.Keyword[0];
         for(int i = 1; i < book.keywordNum; ++i)

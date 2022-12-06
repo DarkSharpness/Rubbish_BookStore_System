@@ -12,7 +12,8 @@ namespace dark {
  * String of a fixed length.
  * With basic string functions.
  * 
- * @tparam len The maximum lenght of a string
+ * @tparam len The maximum length of a string
+ * 
  */
 template <int len>
 class string {
@@ -24,14 +25,15 @@ class string {
     /* Basic functions. */
 
     string() {memset(str,0,sizeof(str));}
-    string(const char *ptr) :string() {strcpy(str,ptr);}
-
+    string(const char *ptr) {strcpy(str,ptr);}
     ~string() = default;
+
     string &operator =(const string &rhs) {
         if(this == &rhs) return *this;
         memcpy(str,rhs.str,sizeof(rhs));
         return *this;
     }
+
     string &operator =(const char *ptr) {
         memset(str,0,sizeof(str));
         strcpy(str,ptr);
@@ -39,7 +41,7 @@ class string {
     }
 
     // explicit 
-    operator const char *() {
+    operator const char *() const{
         return str;
     }
 
