@@ -1,7 +1,8 @@
 Project Name : BookStore114514
 Author : DarkSharpness
 
-(The following parts have not been implemented yet!)
+**(The following parts have not been completely implemented yet!)**
+***
 
 Structure:
 
@@ -12,10 +13,11 @@ Structure:
 &nbsp;&nbsp;Check with AccountSystem First. Then turn to BookSystem.
 &nbsp;b. User Command.
 &nbsp;&nbsp;Turn to AccountSystem.
-&nbsp;c. Log Command.
-&nbsp;&nbsp;Turn to commandManager.
-&nbsp;d. Others.(Not much)
+&nbsp;c. Log Command and others.
 &nbsp;&nbsp;Do it within the commandManager.
+
+
+
 
 Class Info & Function(with comments):
 String: Custom string storing information.(Fully commented)
@@ -425,7 +427,7 @@ AccountSystem: User Management system.
 class AccountSystem {
   private:
     BlockList <UserID_t,Account> library;
-    struct User {    
+    struct User {  
         int     index; // Index in the vector
         Level_t Level; // Level of the people
         ISBN_t  ISBN;  // The ISBN of book selected
