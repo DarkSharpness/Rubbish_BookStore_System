@@ -1,26 +1,34 @@
-Project Name : BookStore114514
-Author : DarkSharpness
+## Project Name : Rubbish_BookStore_System
 
-**(The following parts have not been completely implemented yet!)**
+## Author : DarkSharpness
+
+## !!! The following parts have not been completely implemented yet!
+
+
 ***
 
-Structure:
+### Structure:
 
 1. ReadCommand by commandManager.
 2. CommandManager analyze the input command and therefore perform it.
 
-&nbsp;a. Book Command.
-&nbsp;&nbsp;Check with AccountSystem First. Then turn to BookSystem.
-&nbsp;b. User Command.
-&nbsp;&nbsp;Turn to AccountSystem.
-&nbsp;c. Log Command and others.
-&nbsp;&nbsp;Do it within the commandManager.
+a. Book Command.
+
+Check with AccountSystem First. Then turn to BookSystem.
+
+b. User Command.
+
+Turn to AccountSystem.
+
+c. Log Command and others.(Not Much)
+
+Do it within the commandManager.
 
 
 
+### Class Info & Function(with comments):
 
-Class Info & Function(with comments):
-String: Custom string storing information.(Fully commented)
+String: Custom string storing information.
 
 ```C++
 template <int len>
