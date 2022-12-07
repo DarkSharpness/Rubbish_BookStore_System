@@ -24,26 +24,38 @@ class string {
 
     /* Basic functions. */
 
-    string() {memset(str,0,sizeof(str));}
+    /* Initialize by nothing. */
+    string() {}
+    /* Initialize as empty. */
+    string(std::nullptr_t) {memset(str,0,sizeof(str));}
+    /* Initialize by another cstr. */
     string(const char *ptr) {strcpy(str,ptr);}
+    /* Nothing to do. */
     ~string() = default;
 
+    /* Basic copy from another string. */
     string &operator =(const string &rhs) {
         if(this == &rhs) return *this;
         memcpy(str,rhs.str,sizeof(rhs));
         return *this;
     }
 
+    /* Test whether a string is empty */
+    bool operator !(void) const{return str[0];}
+
+    /* Basic copy from another cstr. */
     string &operator =(const char *ptr) {
         memset(str,0,sizeof(str));
         strcpy(str,ptr);
         return *this;
     }
 
-    // explicit 
+    /* Force to change into a cstr. */
     operator const char *() const{
         return str;
     }
+
+    /* Reference to data. */
 
     inline char &operator [](int _pos)      {return str[_pos];}
     inline char  operator [](int _pos) const{return str[_pos];}
@@ -59,15 +71,16 @@ class string {
 
     /* Compare Functions*/
 
-    inline bool operator <(const string &rhs) const{return strcmp(str,rhs.str) < 0;}
-    inline bool operator >(const string &rhs) const{return strcmp(str,rhs.str) > 0;}
-    inline bool operator <=(const string &rhs)const{return strcmp(str,rhs.str) <= 0;}
-    inline bool operator >=(const string &rhs)const{return strcmp(str,rhs.str) >= 0;}
-    inline bool operator ==(const string &rhs)const{return strcmp(str,rhs.str) == 0;}
-    inline bool operator !=(const string &rhs)const{return strcmp(str,rhs.str) != 0;}
-    friend int Compare(const string &lhs,const string &rhs) {
-        return strcmp(lhs.str,rhs.str);
+    template <int _len>
+    inline bool operator <(const string<_len> &rhs) const{return strcmp(str,rhs) < 0;}
+    
+    
+    template <int _len>
+    friend int Compare(const string &lhs,const string<_len> &rhs) {
+        return strcmp(lhs,rhs);
     }
+
+    /* Output by ostream. */
 
     friend std::ostream &operator <<(std::ostream &os,const string &tmp) {
         return os << tmp.str;
@@ -78,4 +91,5 @@ class string {
 
 
 }
+
 #endif
