@@ -5,24 +5,22 @@ Author : DarkSharpness
 
 Structure:
 
-1. ReadCommand by commandManager. 
+1. ReadCommand by commandManager.
 2. CommandManager analyze the input command and therefore perform it.
-    a. Book Command.
-        Check with AccountSystem First.
-        Then turn to BookSystem.
-    b. User Command.
-        Turn to AccountSystem.
-    c. Log Command.
-        Turn to commandManager.
-    d. Others.(Not much)
-        Do it within the commandManager.
 
-
-
+&nbsp;a. Book Command.
+&nbsp;&nbsp;Check with AccountSystem First. Then turn to BookSystem.
+&nbsp;b. User Command.
+&nbsp;&nbsp;Turn to AccountSystem.
+&nbsp;c. Log Command.
+&nbsp;&nbsp;Turn to commandManager.
+&nbsp;d. Others.(Not much)
+&nbsp;&nbsp;Do it within the commandManager.
 
 Class Info & Function(with comments):
 String: Custom string storing information.(Fully commented)
-``` C++
+
+```C++
 template <int len>
 class string {
   private:
@@ -80,8 +78,8 @@ class string {
 
     template <int _len>
     inline bool operator <(const string<_len> &rhs) const{return strcmp(str,rhs) < 0;}
-    
-    
+  
+  
     template <int _len>
     friend int Compare(const string &lhs,const string<_len> &rhs) {
         return strcmp(lhs,rhs);
@@ -97,6 +95,7 @@ class string {
 ```
 
 File: Manage file inout operation.
+
 ```C++
 /* Custom File manager. */
 template <class T,int BIAS,size_t unit = sizeof(T)>
@@ -161,7 +160,8 @@ class File : public std::fstream {
 
 ```
 
-LogWriter: Simply write Logs.
+LogWriter: Simply write logs.
+
 ```C++
 /* Custom log writer. */
 class LogWriter : public std::fstream{
@@ -172,7 +172,7 @@ class LogWriter : public std::fstream{
     LogWriter(const char *_name) : name(_name) {}
     LogWriter(const FileName_t &_name) : name(_name) {}
     ~LogWriter() {}
-    
+  
     /* Just read one of any type.*/
     template <class _T>
     void read(_T *ptr) {
@@ -189,9 +189,9 @@ class LogWriter : public std::fstream{
 
 ```
 
-
 BlockList: Standard Data Container.
-``` C++
+
+```C++
 /**
  * Special Block List for Bookstore 
  * Data are stored in the following way:
@@ -321,10 +321,8 @@ class BlockList {
 
 ```
 
-
-
-
 Book: Info of one book.
+
 ```C++
 
 /* Book without ISBN. */
@@ -337,7 +335,7 @@ struct BookBase {
     size_t keywordNum;      // number of keywords
     size_t quantity;        // quantitiy of books 
     double cost;            // cost of one book
-    
+  
     /* Simply clearing zero. */
     BookBase() {memset(this,0,sizeof(*this));}
 
@@ -365,6 +363,7 @@ struct BookBase {
 ```
 
 Account: Info of one user.
+
 ```C++
 
 /* Custom account. */
@@ -381,7 +380,7 @@ class Account {
 
     /* Must provide params */
     Account() = delete;
-    
+  
     /* Initialize function.*/
     Account(const UserID_t &_I,const UserName_t& _N,
             const Password_t &_P,Level_t _L,size_t _C):
@@ -392,6 +391,7 @@ class Account {
 ```
 
 BookSystem: Book Management system.
+
 ```C++
 
 class BookSystem {
@@ -419,12 +419,13 @@ class BookSystem {
 ```
 
 AccountSystem: User Management system.
+
 ```C++
 
 class AccountSystem {
   private:
     BlockList <UserID_t,Account> library;
-    struct User {      
+    struct User {    
         int     index; // Index in the vector
         Level_t Level; // Level of the people
         ISBN_t  ISBN;  // The ISBN of book selected
@@ -463,7 +464,8 @@ class AccountSystem {
 ```
 
 commandManager: Managing input commands.
-``` C++
+
+```C++
 class commandManager {
     LogWriter log;
     BookSystem books;
@@ -475,8 +477,8 @@ class commandManager {
 };
 ```
 
-
 main(): Just read commands and work.
+
 ```C++
 signed main() {
     dark::commandManager _C;
@@ -484,7 +486,6 @@ signed main() {
     return 0;
 }
 ```
-
 
 Storage Info:
 book1.bin: map  nodes info
@@ -496,7 +497,6 @@ user2.bin: list nodes info
 user3.bin: data holder of user
 
 dark.log: custom log file
-
 
 Update History:
 22/12/07 : First Draft.
