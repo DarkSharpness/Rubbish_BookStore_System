@@ -5,6 +5,8 @@ build/
 docs/README.md
 docs/requirements.md
 docs/bonus.md
+docs/note.md
 test.cpp
 test/
+TMP/
 .vscode/

@@ -7,9 +7,10 @@
 namespace dark {
 
 /* Custom File manager. */
-template <class T,int BIAS,size_t unit = sizeof(T)>
+template <class _T,int BIAS,size_t unit = sizeof(_T)>
 class File : public std::fstream {
-    FileName_t name;
+    using FileName_t = dark::string <24>;
+    const FileName_t name;
 
   public:
     File() = delete;
@@ -32,8 +33,11 @@ class File : public std::fstream {
        True  if succesfully created. 
        False if already existed.*/
     bool create() {
+        close();
         open();
-        if(good() && peek() != EOF) return true;
+        this->std::fstream::seekg(0);
+        peek();
+        if(good()) return false;
         close(); // close first
         open(std::ios::out);
         close();
@@ -42,31 +46,24 @@ class File : public std::fstream {
     }
 
     /* Open the given File in binary mode(default). */
-    void open(std::ios_base::openmode __mode = (std::ios_base::openmode)28) {
-        this->std::fstream::open(name,__mode);
+    void open(std::ios_base::openmode mode = (std::ios_base::openmode)24) {
+        this->std::fstream::open(name,mode);
     }
 
-    /* Just read one of any type.*/
-    template <class _T>
-    void read(_T *ptr) {
-        this->std::fstream::read(reinterpret_cast <char *>(ptr),sizeof(_T));
+    /* Just read one of _T. */
+    void read(_T &ptr) {
+        this->std::fstream::read(reinterpret_cast <char *>(&ptr),sizeof(_T));
     }
 
-    /* Just write one object of any type.*/
-    template <class _T>
+    void read(int &ptr) {
+        this->std::fstream::read(reinterpret_cast <char *>(&ptr),sizeof(int));
+    }
+
+    /* Just write one of _T. */
     void write(const _T &val,size_t siz = sizeof(_T)) {
         this->std::fstream::write(reinterpret_cast <const char *>(&val),siz);
     }
-
-    /* Just overwrite one object of any type.
-       Not that the cur pointer is not moved.*/
-    template <class _T>
-    void overwrite(const _T &val,size_t siz = sizeof(_T)) {
-        this->std::fstream::write(reinterpret_cast <const char *>(&val),siz);
-        seekp(-siz,std::ios::cur);
-    }
 };
-
 
 
 }

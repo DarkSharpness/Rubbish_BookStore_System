@@ -6,6 +6,13 @@
 
 
 ***
+### Standard
+
+#define CONSTANT
+MyClass variableName
+void functionName.
+
+
 
 ### Structure:
 
