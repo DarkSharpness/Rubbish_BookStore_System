@@ -1,8 +1,4 @@
 #include <bits/stdc++.h>
-// #include <Dark/inout>
-using ll = long long;
-using ull = unsigned long long;
-// #define int long long
 
 /**
  * String of a fixed length.
@@ -108,20 +104,13 @@ class File : public std::fstream {
         seekg(BIAS + __n * unit);
     }
 
-    /* Locate read position with extra bias. */
-    void locateI(size_t __N,size_t __B) {
-        seekg(BIAS + __n * unit + __B);
-    }
 
     /* Locate write position. */
     void locateO(int __n) {
         seekp(BIAS + __n * unit);
     }
 
-    /* Locate write position with extra bias. */
-    void locateO(size_t __N,size_t __B) {
-        seekp(BIAS + __n * unit + __B);
-    }
+
 
     /* Open a new file and change to write/read mode. 
        True  if succesfully created. 
@@ -161,17 +150,23 @@ class File : public std::fstream {
     }
 };
 
-using key_t   = string <72>;
-using value_t = string <68>; 
+using value_t = int; 
+
+int Compare(int x,int y) {
+    if(x < y) return -1;
+    else return x > y;
+}
+
 
 class BlockList {
   private:
-    // #define MAX_SIZE   509
-    // #define BLOCK_SIZE 511
+    #define MAX_SIZE   509
+    #define BLOCK_SIZE 511
+    using key_t   = string <72ULL>;
 
-    #define MAX_SIZE   9
-    #define BLOCK_SIZE 11
-    using Return_List = std::vector <value_t>;
+
+    // #define MAX_SIZE   9
+    // #define BLOCK_SIZE 11
 
     struct pair_t {
         key_t   key;
@@ -186,6 +181,7 @@ class BlockList {
         const pair_t &get(const key_t &_k,const value_t &_v) {
             key = _k;
             val = _v;
+            return *this;
         }
     };
     struct Node {
@@ -204,7 +200,7 @@ class BlockList {
     };
     
     File<Node,sizeof(Node) > NodeFile;
-    File<Data,-sizeof(Data)> DataFile;
+    File<Data,0>             DataFile;
     Node header;// Header information.
 
     /** 
@@ -235,6 +231,7 @@ class BlockList {
     }
 
   public:
+    using Return_List = std::vector <value_t>;
     BlockList() = delete;
     BlockList(const char *c1,const char *c2):NodeFile(c1),DataFile(c2) {
         /* Create space for null node and header */
@@ -252,13 +249,15 @@ class BlockList {
     }
     ~BlockList() {
         write(header,-1);
+        NodeFile.close();
+        DataFile.close();
     }
 
 
   protected:
     /* Memmove data. */
     void copy(pair_t *dst,pair_t *src,int count) {
-        memmove((void *)src,dst,sizeof(pair_t) * count);
+        memmove((void *)dst,src,sizeof(pair_t) * count);
     }
     /* Find first index no less than key */
     int find_first(pair_t *A,const key_t &key,int len) {
@@ -291,7 +290,7 @@ class BlockList {
         if(pos < 0) return;
         
         if(pos == cur.count) {cur.max = tmp[pos].get(key,val);} 
-        else {copy(tmp + pos + 1,tmp + pos,cur.count - pos);}
+        else {copy(tmp + pos + 1,tmp + pos,cur.count - pos);tmp[pos].get(key,val);}
         if(++cur.count <= MAX_SIZE) {
             write(cur,cur.index);
             write(tmp,cur.index);
@@ -334,6 +333,7 @@ class BlockList {
         if(pos == cur.count - 1) {cur.max = tmp[pos - 1];}
         else {copy(tmp + pos,tmp + pos + 1,cur.count - pos);}
 
+        --cur.count;
         write(cur,cur.index);
         write(tmp,cur.index);
     }
@@ -398,9 +398,10 @@ class BlockList {
                 index = cur.nxt;
             } else {
                 Data tmp;
+                read(tmp,index);
                 int i = find_first(tmp,key,cur.count);
                 int j = find_last (tmp,key,cur.count);
-                while(i < j) {vec.emplace_back(vec[i++]);}
+                while(i < j) {vec.emplace_back(tmp[i++].val);}
                 if(j != cur.count) return;
             }
         }
@@ -415,12 +416,42 @@ class BlockList {
 
 
 signed main() {
-    string <64> str1 = "fuckULL";
-                            // "F:/Code/Github/Rubbish_BookStore_System/pretasks/a.txt";
-    string <64> str2 = "fuckPythonInterpreter";
-                            // "F:/Code/Github/Rubbish_BookStore_System/pretasks/b.txt";
+    string <64> str1 = 
+                            "fuckULL";
+                            // "F:/Code/Github/Rubbish_BookStore_System/pretask_new/a";
+    string <64> str2 =      
+                            "fuckPythonInterpreter";
+                            // "F:/Code/Github/Rubbish_BookStore_System/pretask_new/b";
+    // remove(str1);
+    // remove(str2);
     BlockList ans(str1,str2);
-
+    int n;
+    std::cin >> n;
+    BlockList::Return_List A;
+    string <64> opt;
+    string <72> a;
+    value_t b;
+    while(n--) {
+        std::cin >> opt >> a;
+        if(opt == "find") {
+            ans.find_all(a,A);
+            if(A.empty()) {
+                std::cout << "null\n";
+            } else {
+                for(const auto &it : A) {
+                    std::cout << it << ' ';
+                }
+                std::cout << '\n';
+            }
+            continue;
+        }
+        std::cin >> b;
+        if(opt == "delete") {
+            ans.erase(a,b);
+        } else if(opt == "insert") {
+            ans.insert(a,b);
+        }
+    }
 
     return 0;
 }
