@@ -9,19 +9,16 @@
 namespace dark {
 
 /**
- * String of a fixed length.
- * With basic string functions.
+ * @brief Custom fixed-length string for file output use.
  * 
- * @tparam len The maximum length of a string
- * 
+ * @tparam len Length of the string.
  */
-template <int len>
+template <size_t len>
 class string {
   private:
     char str[len];
 
   public:
-
     /* Basic functions. */
 
     /* Initialize by nothing. */
@@ -35,13 +32,9 @@ class string {
 
     /* Basic copy from another string. */
     string &operator =(const string &rhs) {
-        if(this == &rhs) return *this;
-        memcpy(str,rhs.str,sizeof(rhs));
+        if(this != &rhs) { memcpy(str,rhs.str,sizeof(str)); }
         return *this;
     }
-
-    /* Test whether a string is empty */
-    bool operator !(void) const{return str[0];}
 
     /* Basic copy from another cstr. */
     string &operator =(const char *ptr) {
@@ -50,38 +43,42 @@ class string {
         return *this;
     }
 
+    /* Test whether a string is empty */
+    bool operator !(void) const {return str[0];}
+
+    /* Test whether empty */
+    bool empty() const {return !str[0];}
+
     /* Force to change into a cstr. */
-    operator const char *() const{
-        return str;
-    }
+    operator const char *() const {return str;}
 
     /* Reference to data. */
 
-    inline char &operator [](int _pos)      {return str[_pos];}
-    inline char  operator [](int _pos) const{return str[_pos];}
-
-    /* Pointer as Iterators */
-
-    inline char *begin()             {return str;}
-    inline const char *begin()  const{return str;}
-    inline const char *cbegin() const{return str;}
-    inline char *end()             {return str + len;}
-    inline const char *end()  const{return str + len;}
-    inline const char *cend() const{return str + len;}
+    inline char &operator [](size_t __pos)       {return str[__pos];}
+    inline char  operator [](size_t __pos) const {return str[__pos];}
 
     /* Compare Functions*/
 
-    template <int _len>
-    inline bool operator <(const string<_len> &rhs) const{return strcmp(str,rhs) < 0;}
-    
-    
-    template <int _len>
-    friend int Compare(const string &lhs,const string<_len> &rhs) {
+    /* Do as u think. */
+    inline bool operator <(const string &rhs) const {return strcmp(str,rhs) < 0;}
+
+    /* Do as u think. */
+    inline bool operator ==(const char *rhs) const {return !strcmp(str,rhs);}
+
+    /* Do as u think. */
+    inline bool operator !=(const char *rhs) const {return strcmp(str,rhs);}
+
+    /* Compare 2 strings. */
+    friend int Compare(const string &lhs,const string &rhs) {
         return strcmp(lhs,rhs);
     }
 
-    /* Output by ostream. */
+    /* Input by istream */
+    friend std::istream &operator >>(std::istream &is,string &tmp) {
+        return is >> tmp.str;
+    }
 
+    /* Output by ostream. */
     friend std::ostream &operator <<(std::ostream &os,const string &tmp) {
         return os << tmp.str;
     }

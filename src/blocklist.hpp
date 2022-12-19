@@ -6,210 +6,303 @@
 
 
 #include <memory>
+#include <list>
 #include <vector>
+#include <algorithm>
+
 
 namespace dark {
 
 
 
-/**
- * Special Block List for Bookstore 
- * Data are stored in the following way:
- * 
- * nodeM <-> nodeM <-> nodeM <-> nodeM...
- *   |-> nodeL <-> nodeL <-> nodeL...
- *         |-> value_t
- * Free value_t nodes are stored.
- * 
-*/
-// template <class key_t,class value_t>
+template <class key_t,class value_t>
 class BlockList {
   private:
-    using value_t  = Book;
-    using key_t    = Keyword_t; // Debug use
+    #define MAX_SIZE 255
+    #define BLOCK_SIZE 256
 
-    /* Node of the list. */
-    struct List {
-        int nxt;   // next pointer
-        int pre;   // prev pointer
-        int index; // index of the list first node
-        int count; // count of the list nodes.
-        key_t key; // maximum key of the block
-        List(int _n = EOF,int _p = EOF,int _i = EOF,int _c = 0):
-            nxt(_n),pre(_p),index(_i),count(_c) {}
-        List(const key_t &_k,int _n = EOF,int _p = EOF,int _i = EOF,int _c = 0):
-            key(_k),nxt(_n),pre(_p),index(_i),count(_c) {}
+    /* Key-Value pair wrapping. */
+    struct pair_t {
+        key_t key;
+        value_t val;
+        /* Compare first by key,then by value_t. */
+        int cmp(const key_t &__k,const value_t &__v) {
+            int __C = Compare(key,__k);
+            if(__C) return __C;
+            else return Compare(val,__v);
+        }
+
+        pair_t &get(const key_t &__k,const value_t &__v) {
+            key = __k;
+            val = __v;
+            return *this;
+        }
+
+        /* Compare by key-only. */
+        friend bool operator <(const key_t &lhs,const pair_t &rhs) {
+            return lhs < rhs.key;
+        }
+
+        /* Compare by key-only. */        
+        friend bool operator <(const pair_t &lhs,const key_t &rhs) {
+            return lhs.key < rhs;
+        }
+
+        pair_t() = default;
+        pair_t(const key_t &__k,const value_t &__v):
+            key(__k),val(__v) {}
     };
 
-    #define MIN_LEN  2
-    #define MAX_LEN  6
-    #define BLOCK_SIZ 7
-
-    /* Node of the key-value pair. */
-    struct Node {
-        value_t val[BLOCK_SIZ];
-        key_t   key[BLOCK_SIZ];
+    /* Only store necessary data. */
+    struct Header {
+        int index;  // Index of data.
+        int count;  // Count of pair.
+        pair_t max; // Max key-val pair.
+        Header() = default;
+        Header(int __i,int __c,const pair_t &__m): 
+            index(__i),count(__c),max(__m) {}
+        Header(int __i,int __c,const key_t &__k,const value_t &__v):
+            index(__i),count(__c),max(__k,__v) {}
     };
 
-    #define LIST_BIAS 8 + sizeof(List) // Leave one vaccancy
-    #define NODE_BIAS 0
+    using Node = pair_t[BLOCK_SIZE];
 
-    File <List,LIST_BIAS> listFile; // List of the nodes.
-    File <Node,NODE_BIAS> nodeFile; // Node of the values.
+    using Container = std::list <Header>; // Container of headers.
+    // using Container = std::vector <Header>;
 
-    friend class Iterator;
 
-  public:
 
-    /* Iterator of one node's value. */
-    struct Iterator {
-      public: 
-        int index[2];   // list/node/pos index (in order to align)
+    Container list;  // Container of header.
+    using iterator = Container::iterator;
+    std::vector <int> memory; // COntainer of unused node index.
+    std::vector <Header> data;
+    Node Node_cache1; // Cache
+    Node Node_cache2; // Cache
 
-      public:
-        /* Initialize. */
-        Iterator(int idx1 = EOF,int idx2 = EOF):
-            index({idx1,idx2}) {}
-        /* Do nothing. */ 
-        ~Iterator() = default;
 
-        /* Test whether it's not empty.*/
-        operator void *() const {
-            return (void *)(index[0] != EOF);
-        }
-        /* Test whether it's an empty iterator. */
-        bool operator !()const {
-            return index[0] == EOF;
-        }
-    };
-    
-  private:
-
-    /* Get the absolute position of a value. */
-    inline static int getLoc(int index,int pos) {
-        return NODE_BIAS + index * sizeof(Node) + pos * sizeof(value_t); 
-    }
-
-    /* The first node equal to key. EOF if not found. */
-    int find(const List &tmp,const key_t &key) {
-        int index = tmp.index;
-        if(index == EOF) return EOF;
-        int count = tmp.count;
-        Node cur;
-        nodeFile.locateI(index);
-        nodeFile.read(&cur);
-        for(int i = 0 ; i < count ; ++i) {
-            if(cur.key[i] < key) continue;
-            if(key < cur.key[i]) return EOF;
-            return i;
-        }
-        return EOF; // It won't happen.
-    }
-
-    /* The first/last node equal to key. EOF/EOF if not found. */
-    Iterator findall(const List &tmp,const key_t &key) {
-        int index = tmp.index;
-        if(index == EOF) return EOF;
-        int count = tmp.count;
-        Node cur;
-        nodeFile.locateI(index);
-        nodeFile.read(&cur);
-        int i,j; // first/last node
-        for(i = 0 ; i < count ; ++i) {
-            if(cur.key[i] < key) continue;
-            if(key < cur.key[i]) return Iterator();
-            break;
-        }
-        if(i == count) return Iterator();
-        for(int j = count - 1 ; j > i ; --j) {
-            if(key < cur.key[i]) continue;
-            break;
-        }
-        return Iterator();
-    }
+    File nodeFile; // Data only node File.
+    File listFile; // Store list like a vector.
 
 
   public:
-    
-    /* Forbidden! */
     BlockList() = delete;
-
-    /* Provide names for 2 File_Manager. */
-    BlockList(const char *c1,const char *c2): 
-        listFile(c1),nodeFile(c2) {
-        if(listFile.create()) {
-            listFile.write(EOF); // Index
-            listFile.write(0);  // Count
-            List tmp;
-            listFile.write(tmp);
-        }
+    /* Set path for cache file. */
+    BlockList(const char *path1,const char *path2) : 
+        nodeFile(path1),listFile(path2) {
         nodeFile.create();
+        if(!listFile.create()) {initList();}
     }
-    /* Close File. */
+
+    /* Deallocate. */
     ~BlockList() {
+        listFile.seekg(0);
+        listFile.write(list.size() + memory.size());
+        listFile.write(list.size());
+        data.assign(list.begin(),list.end());
+        listFile.write(data.front(),sizeof(Header) * list.size());
+        // for(const auto &it : list) listFile.write(it);
         listFile.close();
         nodeFile.close();
     }
 
-    /* Modify given key to given val. */
-    void modify(const key_t &key,const value_t &val) {}
-    /* Modify given key to another key. */
-    void modify(const key_t &key,const key_t &val) {}
-    /* Erase "count" key-value pair.
-       True  if sucessfully erased.
-       False if not existed within. */
-    bool erase(const key_t &key,int count) {}
-    
+  protected:
 
-    /* Return the iterator of key.
-       If not existed,it will return null-Iterator. */
-    Iterator find(const key_t &key) {
+    /* Initialize list file */
+    void initList() {
+        size_t total; // Total of occupied nodes.
+        size_t count; // Count of nodes in list.
+
         listFile.seekg(0);
-        int index;
-        int count;
-        listFile.read(&index);
-        listFile.read(&count);
-        List cur;
-        while(index != EOF) {
-            listFile.locateI(index);
-            listFile.read(&cur);
-            if(cur.key < key) { // Not reached
-                index = cur.nxt;
-            } else {
-                int pos = find(cur,key);
-                if(pos == EOF) return Iterator();
-                else return Iterator(index,getLoc(cur.index,pos));
-            }
+        listFile.read(total); 
+        listFile.read(count); 
+        memory.assign(total,0);
+        data.resize(count);
+
+        listFile.read(data.front(),sizeof(Header) * count);
+        for(auto &tmp : data) {
+            list.push_back(tmp);
+            memory[tmp.index] = true;
         }
-        return Iterator();
+
+        total = 0;
+        for(size_t i = 0 ; i < memory.size() ; ++i)
+            if(!memory[i]) {memory[total++] = i;}
+        memory.resize(total); // Total of available nodes.
     }
 
-    /* Return all iterators of the element. */
-    std::vector <Iterator> findAll(const key_t & key) {
-        listFile.seekg(0);
-        int index;
-        int count;
-        listFile.read(&index);
-        listFile.read(&count);
-        List cur;
-        std::vector <Iterator> ans;
-        while(index != EOF) {
-            listFile.locateI(index);
-            listFile.read(&cur);
-            if(cur.key < key) {
-                index = cur.nxt;
-            } else {
-                Iterator pos = find(cur,key);
-                if(!pos) {return ans;}
-                for(int i = pos.index[0] ; i <= pos.index[1] ; ++i) {
-                    ans.emplace_back(index,getLoc(cur.index,i));
-                }
-                index = cur.nxt;
+
+    /* Write just one Node. */
+    void writeNode(const Node &tmp,int index) {
+        nodeFile.seekp(index * sizeof(Node));
+        nodeFile.write(tmp);
+    }
+
+    /* Read Just one Node. */
+    void readNode(Node &tmp,int index) {
+        nodeFile.seekg(index * sizeof(Node));
+        nodeFile.read(tmp);
+    }
+
+    /* Allocate one new Node. */
+    int newNode() {
+        if(memory.empty()) {
+            return list.size();
+        } else {
+            int ans = memory.back();
+            memory.pop_back();
+            return ans;
+        }
+    }
+
+    /* Deallocate one node. */
+    void recycle(int index) {
+        memory.push_back(index);
+    }
+
+    /**
+     * @brief Search in [0,len) for ans location,
+     * where A[ans - 1] < val < A[ans] .
+     * 
+     * @param A   The array of the pair_t.
+     * @param len The length of the array.
+     * @param key Key of the pair.
+     * @param val Value of the pair.
+     * @return Ans in [0,len] if found. ||
+     *         ~Ans if existing identical pair.
+     */
+    int binary_search(pair_t *A,int len,
+                      const key_t &key,const value_t &val) {
+        int l = 0,r = len;
+        while(l != r) {
+            int mid = (l + r) >> 1;
+            int cmp = A[mid].cmp(key,val);
+            if(cmp < 0) { // A[mid] < k/v
+                l = mid + 1;
+            } else if(cmp > 0) { // A[mid] > k/v
+                r = mid;
+            } else {return ~mid;} // A[mid] = k/v
+        } // l == r && A[l] >= k/v
+        return l;
+    }
+
+    /* Copy data by memmove. */
+    void copy(pair_t *dst,const pair_t *src,int count) {
+        memmove((void *)dst,(void *)src,count * sizeof(pair_t));
+    }
+
+
+  public:
+    using Return_Array = std::vector <value_t>;
+
+    bool insert(const key_t &key,const value_t &val) {
+        if(list.empty()) {
+            list.emplace_back(newNode(),1,key,val);
+            Node &cur = Node_cache1;
+            cur[0].get(key,val);
+            return writeNode(cur,list.front().index);
+        }
+
+        iterator it = list.begin();
+        for( ; it != list.end() ; ++it) {
+            int cmp = it->max.cmp(key,val);
+            if(cmp < 0) {continue;}
+            else {return insert(it,key,val);}
+        }
+        return insert(--it,key,val);
+    }
+
+    void erase(const key_t &key,const value_t &val) {
+        iterator it = list.begin();
+        for( ; it != list.end() ; ++it) {
+            int cmp = it->max.cmp(key,val);
+            if(cmp < 0) continue;
+            else {return erase(it,key,val);}
+        }
+    }
+
+    void findAll(const key_t &key,Return_Array &arr) {
+        iterator it = list.begin();
+        bool EQ = false;
+        Node &cur = Node_cache1;
+        for( ; it != list.end() ; ++it) {
+            int cmp = Compare(it->max.key,key);
+            if(cmp < 0) continue;
+            else {
+                readNode(cur,it->index);
+                int l = EQ ?
+                    0 : std::lower_bound(cur,cur + it->count,key) - cur;
+                int r = !cmp ?
+                    it->count : std::upper_bound(cur,cur + it->count,key) - cur;
+                while(l != r) {arr.push_back(cur[l++].val);}
+                EQ = true;
+                if(cmp) return;
             }
         }
-        return ans;
+    }
+
+
+  protected:
+
+    /* Insert at iterator. */
+    bool insert(iterator it,const key_t &key,const value_t &val) {
+        const int index = it->index;  // No modification.
+        int &count      = it->count;  // Will be changed.
+        Node &cur = Node_cache1;
+        readNode(cur,index);
+
+        int pos = binary_search(cur,count,key,val);
+        if(pos < 0) return false;
+
+        if(pos == count) {it->max = cur[pos].get(key,val);} 
+        else {copy(cur + pos + 1,cur + pos,count - pos);cur[pos].get(key,val);}
+
+        if(++count <= MAX_SIZE) {writeNode(cur,index);}
+        else {split(it,cur);}
+    }
+
+    /* Split target Node. */
+    void split(iterator it,Node &cur) {
+        Node &nxt   = Node_cache2;
+        const int index  = it->index;
+        const int count1 = it->count >> 1; // Count of nxt Node.
+        int &count2      = it->count;      // Count of current node.
+        
+        count2 -= count1;
+        copy(nxt,cur + count2,count1);
+
+        pair_t &max = it->max;
+        it  = list.emplace(++it,newNode(),count1,max);
+        max = cur[count2 - 1];
+
+        writeNode(cur,index);
+        writeNode(nxt,it->index);
+    }
+
+
+    void erase(iterator it,const key_t &key,const value_t &val) {
+        if(it->count == 1) {
+            if(it->max.cmp(key,val)) return;
+            recycle(it->index);
+            list.erase(it);
+            return;
+        }
+
+        const int index = it->index;  // No modification.
+        int &count      = it->count;  // Will be changed.
+        Node &cur = Node_cache1;
+        readNode(cur,index);
+
+        int pos = ~binary_search(cur,count,key,val);
+        if(pos < 0) return;
+
+        if(pos == count - 1) {it->max = cur[pos - 1];}
+        else {copy(cur + pos,cur + pos + 1,count - pos - 1);}
+
+        writeNode(cur,index);
+        --count;
     }
 };
+
 
 
 };

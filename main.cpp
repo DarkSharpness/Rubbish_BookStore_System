@@ -3,7 +3,7 @@
 
 
 signed main() {
-    dark::commandManager _C;
-    while(_C.runCommand());
+    dark::commandManager Conless; // I love Conless!
+    while(Conless.runCommand());
     return 0;
 }

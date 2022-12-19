@@ -137,7 +137,6 @@ using value_t = int;
 
 class BlockList {
   private:
-    
     #define MAX_SIZE 255
     #define BLOCK_SIZE 256
 
@@ -307,7 +306,7 @@ class BlockList {
 
     /* Copy data by memmove. */
     void copy(pair_t *dst,const pair_t *src,int count) {
-        memmove((void *)dst,src,count * sizeof(pair_t));
+        memmove((void *)dst,(void *)src,count * sizeof(pair_t));
     }
 
 
