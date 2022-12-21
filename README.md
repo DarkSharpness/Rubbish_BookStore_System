@@ -1,3 +1,3 @@
-垃圾书店管理系统
+Rubbish Bookstore Management Project.
 
-检查点请看testcase/testcase.cpp
+2022/12/21 Update: Due to poor health condition,this project is temporarily put aside.
