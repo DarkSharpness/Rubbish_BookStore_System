@@ -16,13 +16,18 @@ class Account {
 
     friend class AccountSystem;
   public:
+    void init(const char * __N,const char *__P,Level_t __L) {
+        Name     = __N;
+        Password = __P;
+        Level    = __L;
+    }
 
     /* Must provide params */
-    Account() = delete;
+    Account() = default;
 
     /* Initialize function.*/
-    Account(const UserName_t& _N,const Password_t &_P,Level_t _L):
-        Name(_N),Password(_P),Level(_L) {}
+    Account(const char * __N,const char *__P,Level_t __L):
+        Name(__N),Password(__P),Level(__L) {}
 
     /* All equal. */
     friend int Compare(const Account &lhs,const Account &rhs) {
@@ -32,6 +37,8 @@ class Account {
     friend bool operator < (const Account &lhs,const Account &rhs) {
         return false;
     }
+    const Password_t &PWD() const {return Password;}
+    Level_t LVL() const {return Level;}
 
 };
 

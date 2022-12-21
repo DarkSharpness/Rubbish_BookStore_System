@@ -17,7 +17,7 @@ class Exception {
     /* With Exception. */
     Exception(const char *__m) {isException = true;message = __m;}
     /* With Exception. */
-    Exception(std::string &&__m) {isException = true;message = __m;}
+    Exception(std::string &&__m) {isException = true;message = std::move(__m);}
     /* With Exception. */
     Exception(const std::string &__m) {isException = true;message = __m;}
     /* Test whether Exception happened. */

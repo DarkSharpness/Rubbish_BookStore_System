@@ -14,47 +14,9 @@ using UserID_t   = string <32>;
 using UserName_t = string <32>;
 using Password_t = string <32>;
 using FileName_t = string <32>;
-
-struct Keyword_t {
-    size_t count;
-    string <64> key[20];
-
-    /* Compare 2 keyword object. */
-    friend bool operator <(const Keyword_t &lhs,const Keyword_t &rhs) {
-        for(int i = 0 ; i < 20 ; ++i) {
-            int cmp = Compare(lhs.key[i],rhs.key[i]);
-            if(cmp) return cmp < 0;
-        }
-        return false;
-    }
-
-    /* Compare 2 keyword object. */
-    friend int Compare(const Keyword_t &lhs,const Keyword_t &rhs) {
-        size_t count = std::min(lhs.count,rhs.count);
-        for(int i = 0 ; i < count ; ++i) {
-            int cmp = Compare(lhs.key[i],rhs.key[i]);
-            if(cmp) return cmp;
-        }
-        if(lhs.count == rhs.count) return 0;
-        else return lhs.count < rhs.count ? -1 : 1;
-    }
-
-    size_t size() const {return count;}
-
-    /* Return the __n'th keyword. */
-    string <64> &operator [](int __n) {
-        return key[__n];
-    }
-    /* Return the __n'th keyword. */
-    const string <64> &operator [](int __n) const{
-        return key[__n];
-    }
-
-};
-
+using Keyword_t  = string <64>;
 
 using Level_t = enum {
-    Visitor   = 0,
     Customer  = 1,
     Librarian = 3,
     Manager   = 7
@@ -65,8 +27,6 @@ using show_t = enum {
     Author,
     Keyword
 };
-
-
 
 enum class Command_t{
     exit    = 0,  // quit/exit
@@ -85,6 +45,18 @@ enum class Command_t{
     log     = 13, // show log
     unknown = 114514 // unknown case
 };
+
+/* Standard compare function for any type. */
+template <class T>
+int Compare(const T &x,const T &y) {
+    if(x < y) return -1;
+    else return (y < x);
+}
+
+/* Compare 2 char * strings. */
+int Compare(const char *s1,const char *s2) {
+    return strcmp(s1,s2);
+}
 
 
 /* Test whether it's a valid char  */
@@ -116,6 +88,7 @@ bool isValidUserName(const char *str) {
     return count <= 30;
 }
 
+/* Check ISBN. */
 bool isValidISBN(const char *str) {
     size_t count = 0;
     while(*str) {
@@ -125,8 +98,9 @@ bool isValidISBN(const char *str) {
     return count <= 20;
 }
 
+/* Check BookName. */
 bool isValidBookName(const char *str) {
-    size_t count = 0;
+    int count = 0;
     while(*str) {
         if(*str >= 32 && *str <= 127 && *str != '\"') {++str,++count;continue;}
         return false;
@@ -134,45 +108,63 @@ bool isValidBookName(const char *str) {
     return count <= 60;
 }
 
+/* Check Author. */
+bool isValidAuthor(const char *str) {
+    return isValidBookName(str);
+}
+
+/* Check Keyword. */
 bool isValidKeyword(const char *str) {
-    size_t count = 0;
+    int count  = 0;
+    int length = 0; 
     while(*str) {
+        if(*str == '|') {
+            if(!length) return false;
+            length = 0;
+        }
         if(*str >= 32 && *str <= 127 && *str != '\"') {++str,++count;continue;}
-        return false;
+        return 0;
     }
-    return count <= 60;
+    return count <= 60 && length;
 }
 
+/* Get quantity from a char string */
 std::pair <bool,size_t> getQuantity(const char *str) {
-    size_t count = 0;
+    int count = 0;
     size_t quantity = 0;
     while(*str) {
         if(!isdigit(*str)) return std::make_pair(false,0ULL);
         quantity = quantity * 10 + ((*str) ^ '0'); 
         ++str,++count;
     }
-    return std::make_pair(count <= 10,quantity);
+    if(quantity < 2147483647ULL && quantity && count <= 10) {
+        return std::make_pair(true,quantity);
+    } else {
+        return std::make_pair(false,0ULL);
+    }
 }
 
+/* Get money from a char string */
 std::pair <bool,double> getMoney(const char *str) {
-    size_t count = 0;
-    bool dot = false;
-    // size_t money = 0.0;
+    int count1 = 0; // Digit number.
+    int count2 = 0; // Digit number after dot.
+    bool dot = false;  // Whether there is dot.
     while(*str) {
+        ++count1;
         if(*str == '.' && !dot) {
             dot = true;
+            continue;
         } else if(!isdigit(*str)) return std::make_pair(false,0.0);
-        // money = money * 10 + ((*str) ^ '0');
-        ++str,++count;
+        if(dot) ++count2;
+        ++str;
     }
-    return std::make_pair(count <= 13,std::stod(str));
+    return std::make_pair(count1 <= 13 && count2 == 2,std::stod(str - count1));
 }
-
 
 /* Get Priviledge from an str. */
 std::pair <bool,size_t> getPrivilege(char *str) {
-    if(*str == '1' || *str == '3' || *str == '7' || *str == '0'
-    && *(str + 1) == '\0') {
+    if((*str == '1' || *str == '3' || *str == '7')
+    &&  *(str + 1) == '\0') {
         return std::make_pair(true,*str ^ '0');
     }
     return std::make_pair(false,0ULL);

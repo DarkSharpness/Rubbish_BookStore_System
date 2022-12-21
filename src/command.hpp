@@ -35,6 +35,7 @@ class commandManager {
     std::string input;       // Input buffer.
     std::string token[MAXN]; // Maximum string number.
     size_t count; // Count of tokens
+    
 
     Exception login();
     Exception logout();
@@ -58,8 +59,9 @@ class commandManager {
             while(str[i] == ' ') {++i;}
             token[count].clear();
             if(!str[i]) break;
-            while(str[i] != ' ') {token[count].push_back(str[i++]);}
+            while(str[i] != ' ' && str[i]) {token[count].push_back(str[i++]);}
             ++count;
+            if(!str[i]) break;
         }
         auto iter = commandMap.find(token[0]);
         // Not found.

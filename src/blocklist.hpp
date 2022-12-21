@@ -1,8 +1,8 @@
 #ifndef _BLOCKLIST_HPP_
 #define _BLOCKLIST_HPP_
 
+#include "utils.hpp"
 #include "FileIO.hpp"
-
 
 #include <memory>
 #include <list>
@@ -92,6 +92,7 @@ class BlockList {
     bool isNewNode; // Whether to init a node.
 
   public:
+
     BlockList() = delete;
     /* Set path for cache file. */
     BlockList(const char *path1,const char *path2) : 
@@ -204,16 +205,30 @@ class BlockList {
 
 
   public:
+
+    
+    /* Test whether a BlockList is empty. */
+    bool empty() const {
+        return list.empty();
+    }
+
     using Return_Array = std::vector <value_t>;
 
-    void insert(const key_t &key,const value_t &val) {
+    /**
+     * @brief Tries to insert a key-value pair.
+     * @param key Key to be inserted.
+     * @param val Value to be inserted.
+     * 
+     * @return bool True if successfully inserted.
+     */
+    bool insert(const key_t &key,const value_t &val) {
         if(list.empty()) {
             list.emplace_back(newNode(),1,key,val);
             Node &cur = Node_cache1;
             cur[0].get(key,val);
-            return writeNode(list.begin(),cur);
+            writeNode(list.begin(),cur);
+            return true;
         }
-
         iterator it = list.begin();
         for( ; it != list.end() ; ++it) {
             int cmp = it->max.cmp(key,val);
@@ -223,15 +238,91 @@ class BlockList {
         return insert(--it,key,val);
     }
 
-    void erase(const key_t &key,const value_t &val) {
+    /**
+     * @brief Tries to modify a key-value pair's value. 
+     * Note that the value change shouldn't affect the 
+     * rank of the value.
+     * @param key Key to locate. 
+     * @param val Value to be modified. 
+     * @param tar Value to be modified into.
+     * 
+     * @return bool True if successfully modified.
+     */
+    bool modify(const key_t &key,const value_t &val,const value_t &tar) {
+        if(list.empty()) return false;
+        iterator it = list.begin();
+        for( ; it != list.end() ; ++it) {
+            int cmp = it->max.cmp(key,val);
+            if(cmp < 0) {continue;}
+            else {
+                Node &cur = Node_cache1;
+                readNode(it,cur);
+                int pos = ~binary_search(cur,it->count,key,val);
+                if(pos < 0) return false;
+                cur[pos].val = tar;
+                writeNode(it,cur);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Tries to modify a key-value pair's value. 
+     * Note that the value change shouldn't affect the 
+     * rank of the value.
+     * @param key Key to locate. 
+     * @param val Value to be modified. 
+     * @param tar Value to be modified into.
+     * @param com Value to be compared with.
+     * @param CMP Compare function.(Compare(com,target))
+     * 
+     * @return bool True if successfully modified.
+     */
+    template <class Compare_Type>
+    bool modify_if(const key_t   &key,const value_t &val,
+                   const value_t &tar,const value_t &com,
+                   Compare_Type CMP) {
+        if(list.empty()) return false;
+        iterator it = list.begin();
+        for( ; it != list.end() ; ++it) {
+            int cmp = it->max.cmp(key,val);
+            if(cmp < 0) {continue;}
+            else {
+                Node &cur = Node_cache1;
+                readNode(it,cur);
+                int pos = ~binary_search(cur,it->count,key,val);
+                if(pos < 0) return false;
+                if(!CMP(com,cur[pos].val)) return false;
+                cur[pos].val = tar;
+                writeNode(it,cur);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @brief Tries to erase a key-value pair.
+     * 
+     * @return bool True if successfully erased.
+     */
+    bool erase(const key_t &key,const value_t &val) {
         iterator it = list.begin();
         for( ; it != list.end() ; ++it) {
             int cmp = it->max.cmp(key,val);
             if(cmp < 0) continue;
             else {return erase(it,key,val);}
         }
+        return false;
     }
 
+    
+
+    /**
+     * @brief Find all the values tied with given key.
+     * 
+     * @param key The key to match with.
+     * @param arr The answer vector where answer will be appended.
+     */
     void findAll(const key_t &key,Return_Array &arr) {
         iterator it = list.begin();
         bool EQ = false;
@@ -255,20 +346,21 @@ class BlockList {
 
   protected:
 
-    /* Insert at iterator. */
-    void insert(iterator it,const key_t &key,const value_t &val) {
+    /* Tries to insert at iterator. */
+    bool insert(iterator it,const key_t &key,const value_t &val) {
         int &count = it->count;  // Will be changed.
         Node &cur  = Node_cache1;
         readNode(it,cur);
 
         int pos = binary_search(cur,count,key,val);
-        if(pos < 0) return;
+        if(pos < 0) return false;
 
         if(pos == count) {it->max = cur[pos].get(key,val);} 
         else {copy(cur + pos + 1,cur + pos,count - pos);cur[pos].get(key,val);}
 
         if(++count <= MAX_SIZE) {writeNode(it,cur);}
         else {split(it,cur);}
+        return true;
     }
 
     /* Split target Node. */
@@ -288,13 +380,12 @@ class BlockList {
         (--it)->max = cur[count2 - 1];
         writeNode(it,cur);
     }
-
-
-    void erase(iterator it,const key_t &key,const value_t &val) {
+    /* Tries to erase at iterator. */
+    bool erase(iterator it,const key_t &key,const value_t &val) {
         if(it->count == 1) {
-            if(it->max.cmp(key,val)) return;
+            if(it->max.cmp(key,val)) return false; // Only one not found.
             recycle(it);
-            return;
+            return true;
         }
 
         int &count = it->count;   // Will be changed.
@@ -302,7 +393,7 @@ class BlockList {
         readNode(it,cur);
 
         int pos = ~binary_search(cur,count,key,val);
-        if(pos < 0) return;
+        if(pos < 0) return false;
 
         if(pos == count - 1) {it->max = cur[pos - 1];}
         else {copy(cur + pos,cur + pos + 1,count - pos - 1);}
@@ -310,8 +401,9 @@ class BlockList {
         if(--count >= MIN_SIZE) {
             writeNode(it,cur);
         } else {merge(it,cur);}
+        return true;
     }
-
+    /* Tries to merge a node. */
     void merge(iterator it,Node &cur) {
         if(it != list.begin()) {
             iterator pre = iterator(it._M_node->_M_prev);
@@ -319,19 +411,6 @@ class BlockList {
                 Node &tmp = Node_cache2;
                 readNode(pre,tmp);
                 return merge(pre,tmp,it,cur);
-            }
-            if(pre->count - it->count >= MOVE_SIZE) {
-                Node &tmp = Node_cache2;
-                readNode(pre,tmp);
-                int num = (pre->count - it->count) >> 1;
-                copy(cur + num,cur,num);
-                it->count  += num;
-                pre->count -= num;
-                pre->max = tmp[pre->count - 1];
-                copy(cur,tmp + pre->count,num); 
-                writeNode(it,cur);
-                writeNode(pre,tmp);
-                return;
             }
         }
         if(it != --list.end()) {
@@ -341,23 +420,10 @@ class BlockList {
                 readNode(nxt,tmp);
                 return merge(it,cur,nxt,tmp);
             }
-            if(nxt->count - it->count >= MOVE_SIZE) {
-                Node &tmp = Node_cache2;
-                readNode(nxt,tmp);
-                int num = (nxt->count - it->count) >> 1;
-                copy(cur + it->count,tmp,num);
-                nxt->count -= num;
-                it->count  += num;
-                it->max = cur[it->count - 1];
-                copy(tmp,tmp + num,num);
-                writeNode(it,cur);
-                writeNode(nxt,tmp);
-                return;
-            }
-        } 
+        }
         writeNode(it,cur);
     }
-
+    /* Merge 2 nodes. */
     void merge(iterator pre,Node &cur,iterator nxt,Node &tmp) {
         copy(cur + pre->count,tmp,nxt->count);
         pre->count += nxt->count;

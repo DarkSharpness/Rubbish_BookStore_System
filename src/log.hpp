@@ -2,6 +2,7 @@
 #define _LOG_HPP_
 
 #include "utils.hpp"
+
 #include <fstream>
 
 namespace dark {
