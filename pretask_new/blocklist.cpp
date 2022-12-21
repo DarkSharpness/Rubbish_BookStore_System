@@ -69,7 +69,7 @@ class string {
     /* Compare Functions*/
 
     /* Do as u think. */
-    inline bool operator <(const string &rhs) const {return strcmp(str,rhs) < 0;}
+    // inline bool operator <(const string &rhs) const {return strcmp(str,rhs) < 0;}
 
     /* Do as u think. */
     inline bool operator ==(const char *rhs) const {return !strcmp(str,rhs);}
@@ -162,12 +162,12 @@ class BlockList {
 
         /* Compare by key-only. */
         friend bool operator <(const key_t &lhs,const pair_t &rhs) {
-            return lhs < rhs.key;
+            return Compare(lhs,rhs.key) < 0;
         }
 
         /* Compare by key-only. */        
         friend bool operator <(const pair_t &lhs,const key_t &rhs) {
-            return lhs.key < rhs;
+            return Compare(lhs.key,rhs) < 0;
         }
 
         pair_t() = default;

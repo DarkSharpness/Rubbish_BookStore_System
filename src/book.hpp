@@ -41,6 +41,7 @@ struct Book {
     int Compare(const Book &rhs) const{
         return strcmp(ISBN,rhs.ISBN);
     }
+
     /* Compare by ISBN only */
     bool operator <(const Book &rhs) const {
         return strcmp(ISBN,rhs.ISBN) < 0;

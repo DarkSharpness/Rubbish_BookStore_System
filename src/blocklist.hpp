@@ -1,7 +1,6 @@
 #ifndef _BLOCKLIST_HPP_
 #define _BLOCKLIST_HPP_
 
-#include "book.hpp"
 #include "FileIO.hpp"
 
 
@@ -14,11 +13,19 @@
 namespace dark {
 
 
-
+/**
+ * @brief 
+ * 
+ * @tparam key_t   Require Compare function.
+ * @tparam value_t Require Compare function.
+ */
 template <class key_t,class value_t>
 class BlockList {
   private:
-    #define MAX_SIZE 255
+    #define MIN_SIZE   64
+    #define MAX_SIZE   255
+    #define MOVE_SIZE  1280 // NOT AVAILABLE FEATURE
+    #define MERGE_SIZE 200
     #define BLOCK_SIZE 256
 
     /* Key-Value pair wrapping. */
@@ -40,12 +47,12 @@ class BlockList {
 
         /* Compare by key-only. */
         friend bool operator <(const key_t &lhs,const pair_t &rhs) {
-            return lhs < rhs.key;
+            return Compare(lhs,rhs.key) < 0;
         }
 
         /* Compare by key-only. */        
         friend bool operator <(const pair_t &lhs,const key_t &rhs) {
-            return lhs.key < rhs;
+            return Compare(lhs.key,rhs) < 0;
         }
 
         pair_t() = default;
@@ -80,9 +87,9 @@ class BlockList {
     Node Node_cache2; // Cache
 
 
-    File nodeFile; // Data only node File.
-    File listFile; // Store list like a vector.
-
+    File nodeFile;  // Data only node File.
+    File listFile;  // Store list like a vector.
+    bool isNewNode; // Whether to init a node.
 
   public:
     BlockList() = delete;
@@ -100,7 +107,7 @@ class BlockList {
         listFile.write(list.size());
         data.assign(list.begin(),list.end());
         listFile.write(data.front(),sizeof(Header) * list.size());
-        // for(const auto &it : list) listFile.write(it);
+        isNewNode = false;
         listFile.close();
         nodeFile.close();
     }
@@ -131,21 +138,25 @@ class BlockList {
     }
 
 
-    /* Write just one Node. */
-    void writeNode(const Node &tmp,int index) {
-        nodeFile.seekp(index * sizeof(Node));
-        nodeFile.write(tmp);
+    /* Write just one Node.
+       If type = true,new space will be initialized.*/
+    void writeNode(iterator it,const Node &tmp) {
+        nodeFile.seekp(it->index * sizeof(Node));
+        if(isNewNode) nodeFile.write(tmp); // init space 
+        else nodeFile.write(tmp,it->count * sizeof(pair_t));
+        isNewNode = false;
     }
 
     /* Read Just one Node. */
-    void readNode(Node &tmp,int index) {
-        nodeFile.seekg(index * sizeof(Node));
-        nodeFile.read(tmp);
+    void readNode(iterator it,Node &tmp) {
+        nodeFile.seekg(it->index * sizeof(Node));
+        nodeFile.read(tmp,it->count * sizeof(pair_t));
     }
 
     /* Allocate one new Node. */
     int newNode() {
         if(memory.empty()) {
+            isNewNode = true;
             return list.size();
         } else {
             int ans = memory.back();
@@ -155,8 +166,9 @@ class BlockList {
     }
 
     /* Deallocate one node. */
-    void recycle(int index) {
-        memory.push_back(index);
+    void recycle(iterator it) {
+        memory.push_back(it->index);
+        list.erase(it);
     }
 
     /**
@@ -194,12 +206,12 @@ class BlockList {
   public:
     using Return_Array = std::vector <value_t>;
 
-    bool insert(const key_t &key,const value_t &val) {
+    void insert(const key_t &key,const value_t &val) {
         if(list.empty()) {
             list.emplace_back(newNode(),1,key,val);
             Node &cur = Node_cache1;
             cur[0].get(key,val);
-            return writeNode(cur,list.front().index);
+            return writeNode(list.begin(),cur);
         }
 
         iterator it = list.begin();
@@ -228,7 +240,7 @@ class BlockList {
             int cmp = Compare(it->max.key,key);
             if(cmp < 0) continue;
             else {
-                readNode(cur,it->index);
+                readNode(it,cur);
                 int l = EQ ?
                     0 : std::lower_bound(cur,cur + it->count,key) - cur;
                 int r = !cmp ?
@@ -244,53 +256,50 @@ class BlockList {
   protected:
 
     /* Insert at iterator. */
-    bool insert(iterator it,const key_t &key,const value_t &val) {
-        const int index = it->index;  // No modification.
-        int &count      = it->count;  // Will be changed.
-        Node &cur = Node_cache1;
-        readNode(cur,index);
+    void insert(iterator it,const key_t &key,const value_t &val) {
+        int &count = it->count;  // Will be changed.
+        Node &cur  = Node_cache1;
+        readNode(it,cur);
 
         int pos = binary_search(cur,count,key,val);
-        if(pos < 0) return false;
+        if(pos < 0) return;
 
         if(pos == count) {it->max = cur[pos].get(key,val);} 
         else {copy(cur + pos + 1,cur + pos,count - pos);cur[pos].get(key,val);}
 
-        if(++count <= MAX_SIZE) {writeNode(cur,index);}
+        if(++count <= MAX_SIZE) {writeNode(it,cur);}
         else {split(it,cur);}
     }
 
     /* Split target Node. */
     void split(iterator it,Node &cur) {
         Node &nxt   = Node_cache2;
-        const int index  = it->index;
         const int count1 = it->count >> 1; // Count of nxt Node.
         int &count2      = it->count;      // Count of current node.
-        
+    
         count2 -= count1;
         copy(nxt,cur + count2,count1);
+        
+        /* it newNode() ++it */
 
-        pair_t &max = it->max;
-        it  = list.emplace(++it,newNode(),count1,max);
-        max = cur[count2 - 1];
+        it = list.emplace(++it,newNode(),count1,it->max);
+        writeNode(it,nxt);
 
-        writeNode(cur,index);
-        writeNode(nxt,it->index);
+        (--it)->max = cur[count2 - 1];
+        writeNode(it,cur);
     }
 
 
     void erase(iterator it,const key_t &key,const value_t &val) {
         if(it->count == 1) {
             if(it->max.cmp(key,val)) return;
-            recycle(it->index);
-            list.erase(it);
+            recycle(it);
             return;
         }
 
-        const int index = it->index;  // No modification.
-        int &count      = it->count;  // Will be changed.
-        Node &cur = Node_cache1;
-        readNode(cur,index);
+        int &count = it->count;   // Will be changed.
+        Node &cur  = Node_cache1;
+        readNode(it,cur);
 
         int pos = ~binary_search(cur,count,key,val);
         if(pos < 0) return;
@@ -298,9 +307,65 @@ class BlockList {
         if(pos == count - 1) {it->max = cur[pos - 1];}
         else {copy(cur + pos,cur + pos + 1,count - pos - 1);}
 
-        writeNode(cur,index);
-        --count;
+        if(--count >= MIN_SIZE) {
+            writeNode(it,cur);
+        } else {merge(it,cur);}
     }
+
+    void merge(iterator it,Node &cur) {
+        if(it != list.begin()) {
+            iterator pre = iterator(it._M_node->_M_prev);
+            if(pre->count + it->count <= MERGE_SIZE) {
+                Node &tmp = Node_cache2;
+                readNode(pre,tmp);
+                return merge(pre,tmp,it,cur);
+            }
+            if(pre->count - it->count >= MOVE_SIZE) {
+                Node &tmp = Node_cache2;
+                readNode(pre,tmp);
+                int num = (pre->count - it->count) >> 1;
+                copy(cur + num,cur,num);
+                it->count  += num;
+                pre->count -= num;
+                pre->max = tmp[pre->count - 1];
+                copy(cur,tmp + pre->count,num); 
+                writeNode(it,cur);
+                writeNode(pre,tmp);
+                return;
+            }
+        }
+        if(it != --list.end()) {
+            iterator nxt = iterator(it._M_node->_M_next);
+            if(nxt->count + it->count <= MERGE_SIZE) {
+                Node &tmp = Node_cache2;
+                readNode(nxt,tmp);
+                return merge(it,cur,nxt,tmp);
+            }
+            if(nxt->count - it->count >= MOVE_SIZE) {
+                Node &tmp = Node_cache2;
+                readNode(nxt,tmp);
+                int num = (nxt->count - it->count) >> 1;
+                copy(cur + it->count,tmp,num);
+                nxt->count -= num;
+                it->count  += num;
+                it->max = cur[it->count - 1];
+                copy(tmp,tmp + num,num);
+                writeNode(it,cur);
+                writeNode(nxt,tmp);
+                return;
+            }
+        } 
+        writeNode(it,cur);
+    }
+
+    void merge(iterator pre,Node &cur,iterator nxt,Node &tmp) {
+        copy(cur + pre->count,tmp,nxt->count);
+        pre->count += nxt->count;
+        pre->max    = nxt->max;  
+        recycle(nxt);
+        writeNode(pre,cur);
+    }
+
 };
 
 
