@@ -8,14 +8,14 @@ namespace dark {
 
 
 /* Custom account without userID. */
-class Account {
-  private:
+struct Account {
     UserName_t Name;     // User Name
     Password_t Password; // Password of the Account
     Level_t    Level;    // Priority Level
 
     friend class AccountSystem;
-  public:
+
+    /* Init an account with Name,Password and Level  */
     void init(const char * __N,const char *__P,Level_t __L) {
         Name     = __N;
         Password = __P;
@@ -37,8 +37,6 @@ class Account {
     friend bool operator < (const Account &lhs,const Account &rhs) {
         return false;
     }
-    const Password_t &PWD() const {return Password;}
-    Level_t LVL() const {return Level;}
 
 };
 

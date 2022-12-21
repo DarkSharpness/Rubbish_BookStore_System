@@ -22,12 +22,6 @@ using Level_t = enum {
     Manager   = 7
 };
 
-using show_t = enum {
-    BookName,
-    Author,
-    Keyword
-};
-
 enum class Command_t{
     exit    = 0,  // quit/exit
     login   = 1,  // log in 
@@ -121,11 +115,16 @@ bool isValidKeyword(const char *str) {
         if(*str == '|') {
             if(!length) return false;
             length = 0;
+            ++str;
+            continue;
         }
-        if(*str >= 32 && *str <= 127 && *str != '\"') {++str,++count;continue;}
-        return 0;
+        if(*str >= 32 && *str <= 127 && *str != '\"') {
+            ++str,++count,++length;
+            continue;
+        }
+        return false;
     }
-    return count <= 60 && length;
+    return count <= 60 && length; // Last string shouldn't be 0 in length.
 }
 
 /* Get quantity from a char string */
@@ -162,14 +161,23 @@ std::pair <bool,double> getMoney(const char *str) {
 }
 
 /* Get Priviledge from an str. */
-std::pair <bool,size_t> getPrivilege(char *str) {
-    if((*str == '1' || *str == '3' || *str == '7')
-    &&  *(str + 1) == '\0') {
-        return std::make_pair(true,*str ^ '0');
+std::pair <bool,size_t> getPrivilege(const char *str) {
+    if((*str == '1' || *str == '3' || *str == '7') &&  !*(str + 1)) {
+        return std::make_pair(true,size_t(*str ^ '0'));
     }
     return std::make_pair(false,0ULL);
 }
 
+/* Get one Keyword.False if no more keyword. */
+bool getKeyword(Keyword_t &__K,const char *&str) {
+    size_t index = 0;
+    while(*str && *str != '|') {
+        __K[index++] = *(str++);
+    }
+    __K[index] = '\0';
+    if(!*str++) return false;
+    else        return true; // skip this |
+}
 
 }
 

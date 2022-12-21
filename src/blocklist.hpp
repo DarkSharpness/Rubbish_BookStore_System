@@ -198,6 +198,32 @@ class BlockList {
         return l;
     }
 
+    /**
+     * @brief Search in [0,len) for ans location,
+     * where A[ans - 1] < val < A[ans] .
+     * 
+     * @param A   The array of the pair_t.
+     * @param len The length of the array.
+     * @param key Key of the pair.
+     * @param val Value of the pair.
+     * @return Ans in [0,len] if found. ||
+     *         ~Ans if existing identical pair.
+     */
+    int binary_search(pair_t *A,int len,const key_t &key) {
+        int l = 0,r = len;
+        while(l != r) {
+            int mid = (l + r) >> 1;
+            int cmp = Compare(A[mid].key,key);
+            if(cmp < 0) { // A[mid] < k/v
+                l = mid + 1;
+            } else if(cmp > 0) { // A[mid] > k/v
+                r = mid;
+            } else {return ~mid;} // A[mid] = k/v
+        } // l == r && A[l] >= k/v
+        return l;
+    }
+    
+
     /* Copy data by memmove. */
     void copy(pair_t *dst,const pair_t *src,int count) {
         memmove((void *)dst,(void *)src,count * sizeof(pair_t));
@@ -245,59 +271,40 @@ class BlockList {
      * @param key Key to locate. 
      * @param val Value to be modified. 
      * @param tar Value to be modified into.
+     * @param CMP Compare function.
      * 
      * @return bool True if successfully modified.
      */
-    bool modify(const key_t &key,const value_t &val,const value_t &tar) {
+    template <class Compare_Type>
+    bool modify_if(const key_t &key,Compare_Type CMP) {
         if(list.empty()) return false;
         iterator it = list.begin();
         for( ; it != list.end() ; ++it) {
-            int cmp = it->max.cmp(key,val);
+            int cmp =  Compare(it->max.key,key);
             if(cmp < 0) {continue;}
             else {
                 Node &cur = Node_cache1;
                 readNode(it,cur);
-                int pos = ~binary_search(cur,it->count,key,val);
+                int pos = ~binary_search(cur,it->count,key);
                 if(pos < 0) return false;
-                cur[pos].val = tar;
+                if(!CMP(cur[pos].val)) return false;
                 writeNode(it,cur);
+                return true;
             }
         }
         return false;
     }
 
     /**
-     * @brief Tries to modify a key-value pair's value. 
-     * Note that the value change shouldn't affect the 
-     * rank of the value.
-     * @param key Key to locate. 
-     * @param val Value to be modified. 
-     * @param tar Value to be modified into.
-     * @param com Value to be compared with.
-     * @param CMP Compare function.(Compare(com,target))
+     * @brief Tries to modify key's value into val.
      * 
-     * @return bool True if successfully modified.
+     * @return bool True if successfully erased.
      */
-    template <class Compare_Type>
-    bool modify_if(const key_t   &key,const value_t &val,
-                   const value_t &tar,const value_t &com,
-                   Compare_Type CMP) {
-        if(list.empty()) return false;
-        iterator it = list.begin();
-        for( ; it != list.end() ; ++it) {
-            int cmp = it->max.cmp(key,val);
-            if(cmp < 0) {continue;}
-            else {
-                Node &cur = Node_cache1;
-                readNode(it,cur);
-                int pos = ~binary_search(cur,it->count,key,val);
-                if(pos < 0) return false;
-                if(!CMP(com,cur[pos].val)) return false;
-                cur[pos].val = tar;
-                writeNode(it,cur);
-            }
-        }
-        return false;
+    bool modify(const key_t &key,const value_t &val) {
+        return modify_if(key,[&](value_t &__v)->bool{
+                                __v = val;
+                                return true;
+                             });
     }
 
     /**
