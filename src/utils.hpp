@@ -16,6 +16,17 @@ using Password_t = string <32>;
 using FileName_t = string <32>;
 using Keyword_t  = string <64>;
 
+
+// struct ISBN_t    : public string <24> {using string::string;using string::operator=(const char *);};
+// struct Author_t  : public string <64> {using string::string;using string::operator=(const char *);};
+// struct BookName_t: public string <64> {using string::string;using string::operator=(const char *);};
+// struct UserID_t  : public string <32> {using string::string;using string::operator=(const char *);};
+// struct UserName_t: public string <32> {using string::string;using string::operator=(const char *);};
+// struct Password_t: public string <32> {using string::string;using string::operator=(const char *);};
+// struct FileName_t: public string <32> {using string::string;using string::operator=(const char *);};
+// struct FileName_t: public string <32> {using string::string;using string::operator=(const char *);};
+// struct Keyword_t : public string <64> {using string::string;using string::operator=(const char *);};
+
 enum Level_t {
     Customer  = 1,
     Librarian = 3,
@@ -38,6 +49,14 @@ enum Command_t{
     show_f  = 12, // show finance
     log     = 13, // show log
     unknown = 114514 // unknown case
+};
+
+enum Show_t {
+    showISBN     = 1,
+    showAuthor   = 2,
+    showBookName = 3,
+    showKeyword  = 4,
+    showError    = 0
 };
 
 /* Standard compare function for any type. */
@@ -69,7 +88,13 @@ bool isValidUserID(const char *str) {
         ) {++str,++count;continue;}
         return false;
     }
-    return count <= 30;
+    return count <= 30 && count;
+}
+
+
+/* Test whether it's a UserID. */
+inline bool isValidPassword(const char *str) {
+    return isValidUserID(str);
 }
 
 /* Test whether it's a UserName. */
@@ -79,7 +104,7 @@ bool isValidUserName(const char *str) {
         if(*str >= 32 && *str <= 127) {++str,++count;continue;}
         return false;
     }
-    return count <= 30;
+    return count <= 30 && count;
 }
 
 /* Check ISBN. */
@@ -89,7 +114,7 @@ bool isValidISBN(const char *str) {
         if(*str >= 32 && *str <= 127) {++str,++count;continue;}
         return false;
     }
-    return count <= 20;
+    return count <= 20 && count;
 }
 
 /* Check BookName. */
@@ -99,7 +124,7 @@ bool isValidBookName(const char *str) {
         if(*str >= 32 && *str <= 127 && *str != '\"') {++str,++count;continue;}
         return false;
     }
-    return count <= 60;
+    return count <= 60 && count;
 }
 
 /* Check Author. */
@@ -127,6 +152,19 @@ bool isValidKeyword(const char *str) {
     return count <= 60 && length; // Last string shouldn't be 0 in length.
 }
 
+/* Check Keyword. */
+bool isValidOneKeyword(const char *str) {
+    int count = 0;
+    while(*str) {
+        if(*str >= 32 && *str <= 127 && *str != '\"' && *str != '|') {
+            ++str,++count;
+            continue;
+        }
+        return false;
+    }
+    return count <= 60 && count;
+}
+
 /* Get quantity from a char string */
 std::pair <bool,size_t> getQuantity(const char *str) {
     if(*str == '0') {
@@ -139,8 +177,8 @@ std::pair <bool,size_t> getQuantity(const char *str) {
         quantity = quantity * 10 + (*str ^ '0'); 
         ++str,++count;
     }
-    return std::make_pair(quantity < 2147483647ULL
-                       && quantity && count <= 10,quantity);
+    return std::make_pair(quantity < 2147483647ULL && quantity && count <= 10 && count,
+                          quantity);
 }
 
 /* Get money from a char string */
@@ -180,6 +218,49 @@ bool getKeyword(Keyword_t &__K,const char *&str) {
     __K[index] = '\0';
     if(!*str++) return false;
     else        return true; // skip this |
+}
+
+/// TODO: check the following part.
+
+
+/* Check whether prefix of str is src. */
+bool checkPrefix(const char *str,const char *src) {
+    while(*src) {
+        if(*(str++) != *(src++)) return false;
+    }
+    return true;
+}
+
+/* Get stow type and store the string in ans. */
+Show_t getShowType(const char *str,char *ans) {
+    if(checkPrefix(str,"-ISBN=")) {
+        str += 6;
+        strcpy(ans,str);
+        if(isValidISBN(ans)) return Show_t::showISBN;
+        else                 return Show_t::showError; 
+    } else if(checkPrefix(str,"-name=\"")) {
+        str += 7;
+        size_t length = strlen(strcpy(ans,str));
+        if(ans[length - 1] != '\"') return Show_t::showError;
+        ans[length - 1] = '\0';
+        if(isValidBookName(ans)) return Show_t::showBookName;
+        else                     return Show_t::showError;
+    } else if(checkPrefix(str,"-author=\"")) {
+        str += 9;
+        size_t length = strlen(strcpy(ans,str));
+        if(ans[length - 1] != '\"') return Show_t::showError;
+        ans[length - 1] = '\0';
+        if(isValidAuthor(ans)) return Show_t::showAuthor;
+        else                   return Show_t::showError;
+    } else if(checkPrefix(str,"-keyword=\"")) {
+        str += 10;
+        size_t length = strlen(strcpy(ans,str));
+        if(ans[length - 1] != '\"') return Show_t::showError;
+        ans[length - 1] = '\0';
+        if(isValidOneKeyword(ans)) return Show_t::showKeyword;
+        else                       return Show_t::showError;
+    }
+    return Show_t::showError;
 }
 
 }

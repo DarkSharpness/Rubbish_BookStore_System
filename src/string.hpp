@@ -38,7 +38,6 @@ class string {
 
     /* Basic copy from another cstr. */
     string &operator =(const char *ptr) {
-        memset(str,0,sizeof(str));
         strcpy(str,ptr);
         return *this;
     }

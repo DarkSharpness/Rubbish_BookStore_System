@@ -230,7 +230,6 @@ class BlockList {
 
 
   public:
-
     
     /* Test whether a BlockList is empty. */
     bool empty() const {
@@ -348,6 +347,18 @@ class BlockList {
                 EQ = true;
                 if(cmp) return;
             }
+        }
+    }
+
+    /* Print all elements.*/
+    template <class Print_Type = std::ostream>
+    void printAll(Print_Type &Pfunc = std::cout) {
+        if(empty()) std::cout << '\n';
+        Node &cur = Node_cache1;
+        for(iterator it = list.begin() ; it != list.end() ; ++it) {
+            readNode(it,cur);
+            for(int i = 0 ; i < it->count ; ++i) 
+                Pfunc << cur[i].val;
         }
     }
 

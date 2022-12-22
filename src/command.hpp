@@ -30,29 +30,184 @@ const std::map <std::string,Command_t> commandMap = {
 
 
 class commandManager {
-    #define MAXN 64
-    LogWriter log;
+  private:
+    #define MAXN 256
+    LogWriter log;           // Write log only.
     std::string input;       // Input buffer.
     std::string token[MAXN]; // Maximum string number.
     size_t count; // Count of tokens
-    
+    BookSystem    Library;
+    AccountSystem Users;
 
-    Exception login();
-    Exception logout();
-    Exception reg();
-    Exception changePWD();
-    Exception addUser();
-    Exception remove();
-    Exception buy();
-    Exception select();
-    Exception modify();
-    Exception import();
-    Exception showLog();
-    Exception showFinance();
-    Exception show();
+
+    Exception login() {
+        if(count == 2) {
+            if(!isValidUserID(token[1].data())) {
+                return Exception("Invalid");
+            } 
+            return Users.login(token[1].data());
+        } else if(count == 3) {
+            if(!isValidUserID  (token[1].data()) 
+            || !isValidPassword(token[2].data())) {
+                return Exception("Invalid");
+            }
+            return Users.login(token[1].data(),token[2].data());
+        } else {
+            return Exception("Invalid");
+        }
+    }
+
+    Exception logout() {
+        if(count == 1) {
+            return Users.logout();
+        } else {
+            return Exception("Invalid");
+        }
+    }
+
+    Exception reg() {
+        if(count == 4) {
+            if(!isValidUserID  (token[1].data())
+            || !isValidPassword(token[2].data())
+            || !isValidPassword(token[3].data())) {
+                return Exception("Invalid");
+            } else {
+                return Users.registering(token[1].data(),
+                                         token[2].data(),
+                                         token[3].data());
+            }
+        } else {
+            return Exception("Invalid");
+        }
+    }
+    Exception changePWD() {
+        if(count == 3) {
+            if(!isValidUserID  (token[1].data())
+            || !isValidPassword(token[2].data())) {
+                return Exception("Invalid");
+            } else {
+                return Users.changePassword(token[1].data(),
+                                            token[2].data());
+            }
+        } else if(count == 4) {
+            if(!isValidUserID  (token[1].data())
+            || !isValidPassword(token[2].data())
+            || !isValidPassword(token[3].data())) {
+                return Exception("Invalid");
+            } else {
+                return Users.changePassword(token[1].data(),
+                                            token[2].data(),
+                                            token[3].data());
+            }
+        } else {
+            return Exception("Invalid");
+        }
+    }
+
+    Exception addUser() {
+        if(count == 5) {
+            if(!isValidUserID  (token[1].data())
+            || !isValidPassword(token[2].data())
+            || !isValidUserName(token[4].data())) {
+                return Exception("Invalid");
+            }
+            auto pair = getPrivilege(token[3].data());
+            if(!pair.first) {return Exception("Invalid");}
+            return Users.addUser(token[1].data(),token[2].data(),
+                                 pair.second,token[4].data());
+        } else {
+            return Exception("Invalid");
+        }
+    }
+
+    Exception remove() {
+        if(count == 2) {
+            if(!isValidUserID(token[1].data())) {
+                return Exception("Invalid");
+            } else {
+                return Users.removeUser(token[1].data());
+            }
+        }
+    }
+
+    Exception show() {
+        if(!Users.checkLevel(Level_t::Customer)) {
+            return Exception("Invalid");
+        }
+        if(count == 1) {
+            Library.showAll();
+        } else if(count == 2) {
+            char str[256];
+            Show_t opt = getShowType(token[1].data(),str);
+            switch(opt) {
+                case Show_t::showISBN:    return Library.showISBN(str);  
+                case Show_t::showAuthor:  return Library.showAuthor(str);
+                case Show_t::showBookName:return Library.showBookName(str);
+                case Show_t::showKeyword: return Library.showKeyword(str);
+                default: return Exception("Invalid");
+            }
+        } else {
+            return Exception("Invalid");
+        }
+    }
+
+    Exception buy() {
+        if(!Users.checkLevel(Level_t::Customer)) {
+            return Exception("Invalid");
+        }
+        if(count == 3) {
+            auto pair1 = getQuantity(token[1].data());
+            auto pair2 = getMoney   (token[2].data());
+            if(!pair1.first || !pair2.first) {
+                return Exception("Invalid");
+            }
+
+            const ISBN_t *Iptr = Users.selected();
+            if(Iptr == nullptr) return Exception("Invalid");
+
+            return Library.remove(*Iptr,pair1.second);
+        } else {
+            return Exception("Invalid");
+        }
+    }
+
+    Exception select() {
+        if(!Users.checkLevel(Level_t::Customer)) {
+            return Exception("Invalid");
+        }
+        if(count == 2) {
+            if(!isValidISBN(token[1].data())) {
+                return Exception("Invalid");
+            } else {
+                return Users.select(token[1].data());
+            }
+        } else {
+            return Exception("Invalid");
+        }
+    }
+    Exception modify() {
+
+    }
+    Exception import() {
+
+    }
+    
+    Exception showLog() {
+
+    }
+
+        
+    Exception showFinance() {
+
+
+        
+    }
+
+
+  private:
 
     /* Just Split the string and get command. */
-    Command_t split(std::string &str) noexcept{
+    Command_t split(std::string &str) noexcept {
         count = 0;
         size_t i = 0;
         while(true) {
@@ -77,7 +232,7 @@ class commandManager {
 
   public:
     ~commandManager() {}
-    commandManager():log("dark.log") {}
+    commandManager(): log() {}
     /* Exception will be dealt within this function. */
     bool runCommand() noexcept{
         std::getline(std::cin,input);

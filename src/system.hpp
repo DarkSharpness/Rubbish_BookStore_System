@@ -14,9 +14,6 @@ namespace dark {
 
 
 
-
-
-
 class AccountSystem {
   private:
     struct User {
@@ -24,7 +21,7 @@ class AccountSystem {
         ISBN_t   ISBN; // The ISBN of book selected
         UserID_t   ID; // User ID.
         User() = default;
-        User(Level_t __L,const char *__I,const UserID_t &__ID):
+        User(Level_t __L,const char *__I,const char *__ID):
             Level(__L),ISBN(__I),ID(__ID) {}
     };
 
@@ -43,6 +40,11 @@ class AccountSystem {
     /* Check the current level standard. */
     inline bool checkLevel(int __MIN) const {
         return (!stack.empty()) && stack.back().Level >= __MIN;
+    }
+
+    inline const ISBN_t *selected() {
+        if(stack.empty() || stack.back().ISBN.empty()) return nullptr;
+        else return &stack.back().ISBN;
     }
 
     /* Tries to find the User according to __ID.
@@ -158,7 +160,6 @@ class AccountSystem {
         else                            return No_Exception();
     }
 
-
     /* Remove a user. */
     Exception removeUser(const UserID_t &__ID) {
         if(!checkLevel(Level_t::Manager))       return Exception("Invalid");
@@ -177,8 +178,6 @@ class AccountSystem {
         return No_Exception();
     }
 };
-
-
 
 
 /**
@@ -207,8 +206,15 @@ class BookSystem {
         libKeyword("b7.bin","b8.bin") {
     }
 
+
+    /* Print the lib. */
+    Exception showAll() noexcept {
+        libISBN.printAll();
+        return No_Exception();
+    }
+
     /* Show by ISBN. */
-    Exception showISBN(const ISBN_t & __I) noexcept {
+    Exception showISBN(const ISBN_t &__I) noexcept {
         arrB.clear();
         libISBN.findAll(__I,arrB);
         for(Book &book : arrB) std::cout << book;
@@ -217,7 +223,7 @@ class BookSystem {
     }
 
     /* Show by Author. */
-    Exception showAuthor(const Author_t & __A) noexcept {
+    Exception showAuthor(const Author_t &__A) noexcept {
         arrI.clear();
         arrB.clear();
         libAuthor.findAll(__A,arrI);
@@ -229,7 +235,7 @@ class BookSystem {
     }
 
     /* SHow by BookName. */
-    Exception showBookName(const BookName_t & __B) noexcept {
+    Exception showBookName(const BookName_t &__B) noexcept {
         arrI.clear();
         arrB.clear();
         libBookName.findAll(__B,arrI);
@@ -269,9 +275,7 @@ class BookSystem {
     /* Select one book and create if not existed. */
     Exception select(const ISBN_t &__I) noexcept {
         Book &cur    = Book_cache1; // Empty book
-        cur.quantity = cur.cost   = 0;
-        cur.Keyword  = cur.Author = cur.Name = "";
-        cur.ISBN     = __I;
+        cur.init(__I);
         libISBN.insert(__I,cur);
         return No_Exception();
     }
