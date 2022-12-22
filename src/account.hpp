@@ -3,9 +3,7 @@
 
 #include "utils.hpp"
 
-
 namespace dark {
-
 
 /* Custom account without userID. */
 struct Account {

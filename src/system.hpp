@@ -30,7 +30,7 @@ class AccountSystem {
 
     std::vector <User>             stack; // User stack.
     std::map <UserID_t,size_t>   instack; // Count of user in stack.
-    std::vector <Account>            arr; // Return array
+    std::vector <Account>            arr; // Return array of Account.
     BlockList <UserID_t,Account> library; // Account library
 
     Account Account_cache1;
@@ -46,11 +46,15 @@ class AccountSystem {
     }
 
     /* Tries to find the User according to __ID.
-       Store the data in arr. */
+       Store the data in arr as the return value. */
     bool getUser(const UserID_t &__ID) {
         arr.clear();
         library.findAll(__ID,arr);
         if(arr.empty()) return false;
+        
+        // Debug use!
+        if(arr.size() > 1) throw "Something unexpected happened in system.hpp";
+
         return true;
     }
 
@@ -59,11 +63,11 @@ class AccountSystem {
 
     /* Just do initialization.*/
     AccountSystem(): library("user1.bin","user2.bin") {
-        UserID_t ID("root");
         if(library.empty()) {
+            UserID_t __I = "root";
             Account &__tmp = Account_cache1;
-            __tmp.init("root","sjtu",Level_t::Manager);
-            library.insert(ID,__tmp);
+            __tmp.init("","sjtu",Level_t::Manager);
+            library.insert(__I,__tmp);
         }
     }
 
@@ -204,7 +208,7 @@ class BookSystem {
     }
 
     /* Show by ISBN. */
-    Exception showISBN(const ISBN_t & __I) {
+    Exception showISBN(const ISBN_t & __I) noexcept {
         arrB.clear();
         libISBN.findAll(__I,arrB);
         for(Book &book : arrB) std::cout << book;
@@ -213,41 +217,38 @@ class BookSystem {
     }
 
     /* Show by Author. */
-    Exception showAuthor(const Author_t & __A) {
+    Exception showAuthor(const Author_t & __A) noexcept {
         arrI.clear();
         arrB.clear();
         libAuthor.findAll(__A,arrI);
-        for(ISBN_t &__I : arrI) {
-            libISBN.findAll(__I,arrB);
-        }
-        for(Book &book : arrB) std::cout << book;
-        if(arrB.empty())       std::cout << '\n';
+        for(ISBN_t &__I : arrI) libISBN.findAll(__I,arrB);
+        for(Book &book : arrB)  std::cout << book;
+        if(arrB.empty())        std::cout << '\n';
+
         return No_Exception();
     }
 
     /* SHow by BookName. */
-    Exception showBookName(const BookName_t & __B) {
+    Exception showBookName(const BookName_t & __B) noexcept {
         arrI.clear();
         arrB.clear();
         libBookName.findAll(__B,arrI);
-        for(ISBN_t &__I : arrI) {
-            libISBN.findAll(__I,arrB);
-        }
-        for(Book &book : arrB) std::cout << book;
-        if(arrB.empty())       std::cout << '\n';
+        for(ISBN_t &__I : arrI) libISBN.findAll(__I,arrB);
+        for(Book &book : arrB)  std::cout << book;
+        if(arrB.empty())        std::cout << '\n';
+
         return No_Exception();
     }
 
     /* Show by one Keyword. */
-    Exception showKeyword(const Keyword_t &__K) {
+    Exception showKeyword(const Keyword_t &__K) noexcept {
         arrI.clear();
         arrB.clear();
         libKeyword.findAll(__K,arrI);
-        for(ISBN_t &__I : arrI) {
-            libISBN.findAll(__I,arrB);
-        }
-        for(Book &book : arrB) std::cout << book;
-        if(arrB.empty())       std::cout << '\n';
+        for(ISBN_t &__I : arrI) libISBN.findAll(__I,arrB);
+        for(Book &book : arrB)  std::cout << book;
+        if(arrB.empty())        std::cout << '\n';
+
         return No_Exception();
     }
 
@@ -265,24 +266,25 @@ class BookSystem {
         }
     }
 
-    /* Select one book. */
-    Exception select(const ISBN_t &__I) {
-        Book &cur   = Book_cache1;
-        cur.Keyword = cur.Author = cur.Keyword = "";
-        cur.ISBN    = __I;
+    /* Select one book and create if not existed. */
+    Exception select(const ISBN_t &__I) noexcept {
+        Book &cur    = Book_cache1; // Empty book
+        cur.quantity = cur.cost   = 0;
+        cur.Keyword  = cur.Author = cur.Name = "";
+        cur.ISBN     = __I;
         libISBN.insert(__I,cur);
         return No_Exception();
     }
+
     /* Modify book with ISBN = _I to another Book. */
-    Exception modify(const ISBN_t &__I,const Book &__B) {
+    Exception modify(const ISBN_t &__I,const Book &__B) noexcept {
         if(__I == __B.ISBN) { // modify Book only.
             libISBN.modify(__I,__B);
         } else {
-            Book &cur = Book_cache1;
-            
             arrB.clear();
             libISBN.findAll(__I,arrB);
-            cur = arrB.front();
+            const Book &cur = arrB.front();
+
             libISBN.erase(__I,cur);
             libISBN.insert(__I,__B);
 
@@ -293,21 +295,24 @@ class BookSystem {
 
             Keyword_t key;
             const char *str = __B.Keyword;
-            while(getKeyword(key,str)) {
+            while(true) {
+                bool isEnd = !getKeyword(key,str);
                 libKeyword.erase(key,__I);
                 libKeyword.insert(key,__B.ISBN);
+                if(isEnd) break;
             }
         }
         return No_Exception();
     }
-    /* Import books with given quantity and cost */
-    Exception import(const ISBN_t & __I,size_t __q,double __c) {
+
+    /* Import books with given quantity. */
+    Exception import(const ISBN_t & __I,size_t __q) noexcept {
         libISBN.modify_if(__I,
-                            [=](Book &__B)->bool { 
+                            [=](Book &__B)->bool {
                                 __B.quantity += __q;
-                                __B.cost     += __c;
                                 return true;
                             });
+        return No_Exception();
     }
 
 };

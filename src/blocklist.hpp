@@ -2,7 +2,7 @@
 #define _BLOCKLIST_HPP_
 
 #include "utils.hpp"
-#include "FileIO.hpp"
+#include "fileio.hpp"
 
 #include <memory>
 #include <list>
@@ -21,11 +21,11 @@ namespace dark {
  */
 template <class key_t,class value_t>
 class BlockList {
-  private:
+  private: /* Basic Data */
+
     #define MIN_SIZE   64
     #define MAX_SIZE   255
-    #define MOVE_SIZE  1280 // NOT AVAILABLE FEATURE
-    #define MERGE_SIZE 200
+    #define MERGE_SIZE 224
     #define BLOCK_SIZE 256
 
     /* Key-Value pair wrapping. */
@@ -91,7 +91,7 @@ class BlockList {
     File listFile;  // Store list like a vector.
     bool isNewNode; // Whether to init a node.
 
-  public:
+  public: /* (De-)Construction related. */
 
     BlockList() = delete;
     /* Set path for cache file. */
@@ -113,7 +113,7 @@ class BlockList {
         nodeFile.close();
     }
 
-  protected:
+  protected:/* Easy to use functions */
 
     /* Initialize list file */
     void initList() {
@@ -174,7 +174,7 @@ class BlockList {
 
     /**
      * @brief Search in [0,len) for ans location,
-     * where A[ans - 1] < val < A[ans] .
+     * where A[ans - 1] < pair(key/val) < A[ans] .
      * 
      * @param A   The array of the pair_t.
      * @param len The length of the array.
@@ -200,14 +200,13 @@ class BlockList {
 
     /**
      * @brief Search in [0,len) for ans location,
-     * where A[ans - 1] < val < A[ans] .
+     * where A[ans - 1].key < key < A[ans].key
      * 
      * @param A   The array of the pair_t.
      * @param len The length of the array.
      * @param key Key of the pair.
-     * @param val Value of the pair.
      * @return Ans in [0,len] if found. ||
-     *         ~Ans if existing identical pair.
+     *         ~Ans if existing identical key.
      */
     int binary_search(pair_t *A,int len,const key_t &key) {
         int l = 0,r = len;
@@ -269,14 +268,12 @@ class BlockList {
      * Note that the value change shouldn't affect the 
      * rank of the value.
      * @param key Key to locate. 
-     * @param val Value to be modified. 
-     * @param tar Value to be modified into.
-     * @param CMP Compare function.
+     * @param Mfunc Modify function.
      * 
      * @return bool True if successfully modified.
      */
-    template <class Compare_Type>
-    bool modify_if(const key_t &key,Compare_Type CMP) {
+    template <class Modify_Type>
+    bool modify_if(const key_t &key,Modify_Type Mfunc) {
         if(list.empty()) return false;
         iterator it = list.begin();
         for( ; it != list.end() ; ++it) {
@@ -287,7 +284,7 @@ class BlockList {
                 readNode(it,cur);
                 int pos = ~binary_search(cur,it->count,key);
                 if(pos < 0) return false;
-                if(!CMP(cur[pos].val)) return false;
+                if(!Mfunc(cur[pos].val)) return false;
                 writeNode(it,cur);
                 return true;
             }
@@ -297,11 +294,15 @@ class BlockList {
 
     /**
      * @brief Tries to modify key's value into val.
+     * Note that the value change shouldn't affect the 
+     * rank of the value.
+     * @param key Key to locate. 
+     * @param Mfunc Modify function.
      * 
      * @return bool True if successfully erased.
      */
     bool modify(const key_t &key,const value_t &val) {
-        return modify_if(key,[&](value_t &__v)->bool{
+        return modify_if(key,[&](value_t &__v)->bool {
                                 __v = val;
                                 return true;
                              });

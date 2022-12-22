@@ -129,18 +129,18 @@ bool isValidKeyword(const char *str) {
 
 /* Get quantity from a char string */
 std::pair <bool,size_t> getQuantity(const char *str) {
+    if(*str == '0') {
+        return std::make_pair(!*(str + 1),0ULL);
+    }
     int count = 0;
     size_t quantity = 0;
     while(*str) {
         if(!isdigit(*str)) return std::make_pair(false,0ULL);
-        quantity = quantity * 10 + ((*str) ^ '0'); 
+        quantity = quantity * 10 + (*str ^ '0'); 
         ++str,++count;
     }
-    if(quantity < 2147483647ULL && quantity && count <= 10) {
-        return std::make_pair(true,quantity);
-    } else {
-        return std::make_pair(false,0ULL);
-    }
+    return std::make_pair(quantity < 2147483647ULL
+                       && quantity && count <= 10,quantity);
 }
 
 /* Get money from a char string */
@@ -148,10 +148,15 @@ std::pair <bool,double> getMoney(const char *str) {
     int count1 = 0; // Digit number.
     int count2 = 0; // Digit number after dot.
     bool dot = false;  // Whether there is dot.
+    if(*str == '.' || (*str == '0' && *(str + 1) != '.')) {
+        return std::make_pair(false,0.0);
+    }
+
     while(*str) {
         ++count1;
         if(*str == '.' && !dot) {
             dot = true;
+            ++str;
             continue;
         } else if(!isdigit(*str)) return std::make_pair(false,0.0);
         if(dot) ++count2;
@@ -161,11 +166,9 @@ std::pair <bool,double> getMoney(const char *str) {
 }
 
 /* Get Priviledge from an str. */
-std::pair <bool,size_t> getPrivilege(const char *str) {
-    if((*str == '1' || *str == '3' || *str == '7') &&  !*(str + 1)) {
-        return std::make_pair(true,size_t(*str ^ '0'));
-    }
-    return std::make_pair(false,0ULL);
+std::pair <bool,Level_t> getPrivilege(const char *str) {
+    return std::make_pair((*str == '1' || *str == '3' || *str == '7') 
+                       && !*(str + 1),Level_t(*str ^ '0'));
 }
 
 /* Get one Keyword.False if no more keyword. */

@@ -18,7 +18,6 @@ struct Book {
     size_t quantity;        // quantitiy of books
     double cost;            // cost of one book
 
-
     /* Simply clearing zero. */
     Book() {memset((void *)this,0,sizeof(*this));}
 
@@ -41,12 +40,12 @@ struct Book {
         return strcmp(ISBN,rhs.ISBN) < 0;
     }
 
-    /* Custom Output for a bookbase object.(With '\n') */
+    /* Custom Output for a bookbase object.(With \\n) */
     friend std::ostream &operator <<(std::ostream &os, const Book &book) {
         os << book.ISBN   << '\t' << book.Name   << '\t'
            << book.Author << '\t' << book.Keyword;
         return os
-                //   << '\t' << book.cost / 100 << '.' << book.cost % 100
+                //  << '\t' << book.cost / 100 << '.' << book.cost % 100
                   << '\t' << std::fixed << std::setprecision(2) << book.cost
                   << '\t' << book.quantity << '\n';
     }
