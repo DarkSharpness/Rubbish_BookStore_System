@@ -16,13 +16,13 @@ using Password_t = string <32>;
 using FileName_t = string <32>;
 using Keyword_t  = string <64>;
 
-using Level_t = enum {
+enum Level_t {
     Customer  = 1,
     Librarian = 3,
     Manager   = 7
 };
 
-enum class Command_t{
+enum Command_t{
     exit    = 0,  // quit/exit
     login   = 1,  // log in 
     logout  = 2,  // log out
