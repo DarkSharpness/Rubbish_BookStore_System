@@ -10,3 +10,5 @@ docs/note.md
 test/
 .vscode/
 pretasks
+bookstore-testcases/
+bin/

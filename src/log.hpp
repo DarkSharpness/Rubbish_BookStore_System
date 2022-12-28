@@ -13,7 +13,7 @@ namespace dark {
 class LogWriter : private File{
   private:
   public:
-    LogWriter(): File("hastin.log") { // I love hastin.
+    LogWriter(): File("bin\\hastin.log") { // I love hastin.
         if(create()) {
             size_t count = 0;
             write(count);

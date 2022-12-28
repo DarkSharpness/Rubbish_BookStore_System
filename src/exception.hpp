@@ -24,7 +24,10 @@ class Exception {
     bool test() const {return isException;}
     /* Change to bool and write exception message. */
     operator bool() const{
-        if(test()) std::cout << message << '\n';
+        if(test()) 
+            std::cout 
+                // << "Invalid\n";
+                << message << '\n';
         return true;
     }
 };

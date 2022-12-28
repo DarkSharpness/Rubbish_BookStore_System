@@ -68,18 +68,18 @@ int Compare(const T &x,const T &y) {
 }
 
 /* Compare 2 char * strings. */
-int Compare(const char *s1,const char *s2) {
+inline int Compare(const char *s1,const char *s2) {
     return strcmp(s1,s2);
 }
 
 
 /* Test whether it's a valid char  */
-bool isValidChar(char __c) {
+inline bool isValidChar(char __c) {
     return __c > 0 && __c < 128;
 }
 
 /* Test whether it's a UserID. */
-bool isValidUserID(const char *str) {
+inline bool isValidUserID(const char *str) {
     size_t count = 0;
     while(*str) {
         if(*str == '_'
@@ -99,7 +99,7 @@ inline bool isValidPassword(const char *str) {
 }
 
 /* Test whether it's a UserName. */
-bool isValidUserName(const char *str) {
+inline bool isValidUserName(const char *str) {
     size_t count = 0;
     while(*str) {
         if(*str >= 32 && *str <= 127) {++str,++count;continue;}
@@ -109,7 +109,7 @@ bool isValidUserName(const char *str) {
 }
 
 /* Check ISBN. */
-bool isValidISBN(const char *str) {
+inline bool isValidISBN(const char *str) {
     size_t count = 0;
     while(*str) {
         if(*str >= 32 && *str <= 127) {++str,++count;continue;}
@@ -119,7 +119,7 @@ bool isValidISBN(const char *str) {
 }
 
 /* Check BookName. */
-bool isValidBookName(const char *str) {
+inline bool isValidBookName(const char *str) {
     int count = 0;
     while(*str) {
         if(*str >= 32 && *str <= 127 && *str != '\"') {++str,++count;continue;}
@@ -129,12 +129,12 @@ bool isValidBookName(const char *str) {
 }
 
 /* Check Author. */
-bool isValidAuthor(const char *str) {
+inline bool isValidAuthor(const char *str) {
     return isValidBookName(str);
 }
 
 /* Check Keyword. */
-bool isValidKeyword(const char *str) {
+inline bool isValidKeyword(const char *str) {
     int count  = 0;
     int length = 0; 
     while(*str) {
@@ -154,7 +154,7 @@ bool isValidKeyword(const char *str) {
 }
 
 /* Check Keyword. */
-bool isValidOneKeyword(const char *str) {
+inline bool isValidOneKeyword(const char *str) {
     int count = 0;
     while(*str) {
         if(*str >= 32 && *str <= 127 && *str != '\"' && *str != '|') {
@@ -167,7 +167,7 @@ bool isValidOneKeyword(const char *str) {
 }
 
 /* Get quantity from a char string */
-std::pair <bool,size_t> getQuantity(const char *str) {
+inline std::pair <bool,size_t> getQuantity(const char *str) {
     if(*str == '0') {
         return std::make_pair(!*(str + 1),0ULL);
     }
@@ -183,7 +183,7 @@ std::pair <bool,size_t> getQuantity(const char *str) {
 }
 
 /* Test whether a char is money type. */
-bool isMoney(const char *str) {
+inline bool isMoney(const char *str) {
     int count1 = 0; // Digit number.
     int count2 = 0; // Digit number after dot.
     bool dot = false;  // Whether there is dot.
@@ -204,20 +204,20 @@ bool isMoney(const char *str) {
 }
 
 /* Get money from a char string */
-std::pair <bool,double> getMoney(const char *str) {
+inline std::pair <bool,double> getMoney(const char *str) {
     bool is = isMoney(str);
     return std::make_pair(is,is ? std::stod(str) : 0.0);
 }
 
 
 /* Get Priviledge from an str. */
-std::pair <bool,Level_t> getPrivilege(const char *str) {
+inline std::pair <bool,Level_t> getLevel(const char *str) {
     return std::make_pair((*str == '1' || *str == '3' || *str == '7') 
                        && !*(str + 1),Level_t(*str ^ '0'));
 }
 
 /* Get one Keyword.False if no more keyword. */
-bool getKeyword(Keyword_t &__K,const char *&str) {
+inline bool getKeyword(Keyword_t &__K,const char *&str) {
     size_t index = 0;
     while(*str && *str != '|') {
         __K[index++] = *(str++);
@@ -231,7 +231,7 @@ bool getKeyword(Keyword_t &__K,const char *&str) {
 
 
 /* Check whether prefix of str is src. */
-bool checkPrefix(const char *str,const char *src) {
+inline bool checkPrefix(const char *str,const char *src) {
     while(*src) {
         if(*(str++) != *(src++)) return false;
     }
@@ -245,7 +245,7 @@ bool checkPrefix(const char *str,const char *src) {
  * @param ans The string to store answer.
  * @return regex_t 
  */
-regex_t getType(char *str,char *&ans) {
+inline regex_t getType(char *str,char *&ans) {
     if(checkPrefix(str,"-ISBN=")) {
         str += 6;
         ans = str;

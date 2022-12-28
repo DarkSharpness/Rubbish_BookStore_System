@@ -12,7 +12,7 @@
 
 namespace dark {
 
-int Compare(int x,int y) {
+inline int Compare(int x,int y) {
     if(x < y) return -1;
     else      return y < x;
 }
@@ -84,7 +84,7 @@ class BlockList {
 
 
     Container list;  // Container of header.
-    using iterator = Container::iterator;
+    #define iterator typename Container::iterator
     std::vector <int> memory; // COntainer of unused node index.
     std::vector <Header> data;
     Node Node_cache1; // Cache
@@ -454,7 +454,7 @@ class BlockList {
         recycle(nxt);
         writeNode(pre,cur);
     }
-
+    #undef iterator
 };
 
 

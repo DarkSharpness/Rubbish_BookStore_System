@@ -1,6 +1,7 @@
 #ifndef _SYSTEM_HPP
 #define _SYSTEM_HPP
 
+
 #include "utils.hpp"
 #include "book.hpp"
 #include "account.hpp"
@@ -8,6 +9,8 @@
 
 
 #include <vector>
+#include <map>
+#include <bits/stdc++.h>
 // #include <stack>
 
 namespace dark {
@@ -26,6 +29,7 @@ class AccountSystem {
     };
 
     std::vector <User>             stack; // User stack.
+    
     std::map <UserID_t,size_t>   instack; // Count of user in stack.
     std::vector <Account>            arr; // Return array of Account.
     BlockList <UserID_t,Account> library; // Account library
@@ -38,19 +42,19 @@ class AccountSystem {
   public:
 
     /* Check the current level standard. */
-    inline bool checkLevel(int __MIN) const {
+    inline bool checkLevel(int __MIN) const noexcept {
         return (!stack.empty()) && stack.back().Level >= __MIN;
     }
 
     /* Get the iterator to selected ISBN */
-    inline ISBN_t *selected() {
+    inline ISBN_t *selected() noexcept {
         if(stack.empty() || stack.back().ISBN.empty()) return nullptr;
         else return &stack.back().ISBN;
     }
 
     /* Tries to find the User according to __ID.
        Store the data in arr as the return value. */
-    bool getUser(const UserID_t &__ID) {
+    bool getUser(const UserID_t &__ID) noexcept {
         arr.clear();
         library.findAll(__ID,arr);
         if(arr.empty()) return false;
@@ -65,7 +69,7 @@ class AccountSystem {
     ~AccountSystem() = default;
 
     /* Just do initialization.*/
-    AccountSystem(): library("u1.bin","u2.bin") {
+    AccountSystem(): library("bin\\u1.bin","bin\\u2.bin") {
         if(library.empty()) {
             UserID_t __I = "root";
             Account &__tmp = Account_cache1;
@@ -75,9 +79,9 @@ class AccountSystem {
     }
 
     /* Log in an account with password. */
-    Exception login(const UserID_t &__ID,const Password_t &__PWD){
-        if(!getUser(__ID))                return Exception("Invalid");
-        if(__PWD != arr.front().Password) return Exception("Invalid");
+    Exception login(const UserID_t &__ID,const Password_t &__PWD) {
+        if(!getUser(__ID))                return Exception("No such User");
+        if(__PWD != arr.front().Password) return Exception("Wrong PWD");
 
         stack.emplace_back(arr.front().Level,"",__ID);
         ++instack[__ID];
@@ -86,9 +90,9 @@ class AccountSystem {
 
     /* Log in an account without password. */
     Exception login(const UserID_t &__ID) {
-        if(!checkLevel(Level_t::Librarian))    return Exception("Invalid");
-        if(!getUser(__ID))                     return Exception("Invalid");
-        if(!checkLevel(arr.front().Level + 1)) return Exception("Invalid");
+        if(!checkLevel(Level_t::Librarian))    return Exception("No enough Level");
+        if(!getUser(__ID))                     return Exception("No such User");
+        if(!checkLevel(arr.front().Level + 1)) return Exception("No enough Level");
 
         stack.emplace_back(arr.front().Level,"",__ID);
         ++instack[__ID];
@@ -97,7 +101,7 @@ class AccountSystem {
 
     /* Log out an account. */
     Exception logout() {
-        if(!checkLevel(Level_t::Customer)) return Exception("Invalid");
+        if(!checkLevel(Level_t::Customer)) return Exception("Not logged in");
 
         auto iter = instack.find(stack.back().ID);
         stack.pop_back();
@@ -112,7 +116,7 @@ class AccountSystem {
         Account &__tmp = Account_cache1; 
         __tmp.init(__Name,__PWD,Level_t::Customer);
 
-        if(!library.insert(__ID,__tmp)) return Exception("Invalid");
+        if(!library.insert(__ID,__tmp)) return Exception("UserID existed");
         else                            return No_Exception();
     }
 
@@ -120,7 +124,7 @@ class AccountSystem {
     Exception changePassword(const UserID_t &__ID,
                              const Password_t &__OLD,
                              const Password_t &__NEW) {
-        if(!checkLevel(Level_t::Customer)) return Exception("Invalid");
+        if(!checkLevel(Level_t::Customer)) return Exception("Not logged in");
 
 
         if(!library.modify_if(__ID,
@@ -129,20 +133,20 @@ class AccountSystem {
                                 X.Password = __NEW;
                                 return true;
                             })) {
-               return Exception("Invalid");
+               return Exception("No such User or Wrong Password");
         } else return No_Exception();
     }
 
     /* Change an account's password with no old password. */
     Exception changePassword(const UserID_t   &__ID,
                              const Password_t &__NEW) {
-        if(!checkLevel(Level_t::Customer)) return Exception("Invalid");
+        if(!checkLevel(Level_t::Manager)) return Exception("Not enough Level");
 
         Account &__new = Account_cache1;
         __new.Password = __NEW;
 
         if(!library.modify(__ID,__new)) {
-               return Exception("Invalid");
+               return Exception("No such User");
         } else return No_Exception();
     }
 
@@ -152,28 +156,28 @@ class AccountSystem {
                       const Password_t &__PWD,
                       Level_t           __L,
                       const UserName_t &__Name) {
-        if(!checkLevel(std::min(__L + 1,3))) return Exception("Invalid");
+        if(!checkLevel(std::max(__L + 1,3))) return Exception("Not enough Level");
 
         Account &__tmp = Account_cache1;
         __tmp.init(__Name,__PWD,__L);
 
-        if(!library.insert(__ID,__tmp)) return Exception("Invalid");
+        if(!library.insert(__ID,__tmp)) return Exception("UserID existed");
         else                            return No_Exception();
     }
 
     /* Remove a user. */
     Exception removeUser(const UserID_t &__ID) {
-        if(!checkLevel(Level_t::Manager))       return Exception("Invalid");
-        if(instack.find(__ID) != instack.end()) return Exception("invalid");
+        if(!checkLevel(Level_t::Manager))       return Exception("Not enough Level");
+        if(instack.find(__ID) != instack.end()) return Exception("Can't remove logged");
 
         Account &__tmp = Account_cache1;
-        if(!library.erase(__ID,__tmp))  return Exception("Invalid");
+        if(!library.erase(__ID,__tmp))  return Exception("No such User to delete");
         else                            return No_Exception();
     }
 
     /* Select an ISBN for current User. */
     Exception select(const ISBN_t &__I) {
-        if(!checkLevel(Level_t::Customer)) return Exception("Invalid");
+        if(!checkLevel(Level_t::Customer)) return Exception("Not logged in");
 
         stack.back().ISBN = __I;
         return No_Exception();
@@ -201,16 +205,16 @@ class BookSystem {
   public:
     ~BookSystem() = default;
     BookSystem(): 
-        libISBN("b1.bin","b2.bin"),
-        libAuthor("b3.bin","b4.bin"),
-        libBookName("b5.bin","b6.bin"),
-        libKeyword("b7.bin","b8.bin") {}
+        libISBN     ("bin\\b1.bin","bin\\b2.bin"),
+        libAuthor   ("bin\\b3.bin","bin\\b4.bin"),
+        libBookName ("bin\\b5.bin","bin\\b6.bin"),
+        libKeyword  ("bin\\b7.bin","bin\\b8.bin") {}
 
     double tradeMoney; // Record last trade sum.
 
 
     /* Get a book from an ISBN */
-    Book &getBook(const ISBN_t &__I) {
+    Book &getBook(const ISBN_t &__I) noexcept {
         arrB.clear();
         libISBN.findAll(__I,arrB);
         return arrB.front();
@@ -276,7 +280,7 @@ class BookSystem {
                                 tradeMoney = __q * __B.cost; 
                                 return true;
                             })) {
-            return Exception("Invalid");
+            return Exception("No such ISBN or Not enough books");
         } else {
             return No_Exception();
         }
@@ -291,13 +295,13 @@ class BookSystem {
     }
 
     /* Modify book with ISBN = _I to another Book. */
-    Exception modify(const ISBN_t &__I,const Book &__B) noexcept {
+    Exception modify(const ISBN_t &__I,const Book &__B) {
         if(__I == __B.ISBN) { // modify Book only.
             libISBN.modify(__I,__B);
         } else {
             arrB.clear();
             libISBN.findAll(__B.ISBN,arrB);
-            if(!arrB.empty()) return Exception("Invalid");
+            if(!arrB.empty()) return Exception("ISBN existed");
 
             libISBN.findAll(__I,arrB);
             const Book &cur = arrB.front();
@@ -325,7 +329,7 @@ class BookSystem {
     /* Import books with given quantity. */
     Exception import(const ISBN_t & __I,size_t __q) noexcept {
         libISBN.modify_if(__I,
-                            [=](Book &__B)->bool {
+                            [&](Book &__B)->bool {
                                 __B.quantity += __q;
                                 return true;
                             });

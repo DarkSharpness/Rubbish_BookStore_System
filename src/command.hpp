@@ -6,7 +6,6 @@
 #include <map>
 
 
-
 namespace dark {
 
 /* Record command. */
@@ -42,17 +41,17 @@ class commandManager {
     Exception login() {
         if(count == 2) {
             if(!isValidUserID(token[1].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid Login User ID");
             } 
             return Users.login(token[1].data());
         } else if(count == 3) {
             if(!isValidUserID  (token[1].data()) 
             || !isValidPassword(token[2].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid Login UserID or Invalid Login PWD");
             }
             return Users.login(token[1].data(),token[2].data());
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Login Command Length");
         }
     }
 
@@ -60,7 +59,7 @@ class commandManager {
         if(count == 1) {
             return Users.logout();
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Logout Command Length");
         }
     }
 
@@ -69,14 +68,14 @@ class commandManager {
             if(!isValidUserID  (token[1].data())
             || !isValidPassword(token[2].data())
             || !isValidPassword(token[3].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid Register UserID/PWD");
             } else {
                 return Users.registering(token[1].data(),
                                          token[2].data(),
                                          token[3].data());
             }
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Register Command Length");
         }
     }
 
@@ -84,7 +83,7 @@ class commandManager {
         if(count == 3) {
             if(!isValidUserID  (token[1].data())
             || !isValidPassword(token[2].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid ChangePWD UserID/PWD");
             } else {
                 return Users.changePassword(token[1].data(),
                                             token[2].data());
@@ -93,14 +92,14 @@ class commandManager {
             if(!isValidUserID  (token[1].data())
             || !isValidPassword(token[2].data())
             || !isValidPassword(token[3].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid ChangePWD UserID/PWD");
             } else {
                 return Users.changePassword(token[1].data(),
                                             token[2].data(),
                                             token[3].data());
             }
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid ChangePWD Command Length");
         }
     }
 
@@ -109,32 +108,32 @@ class commandManager {
             if(!isValidUserID  (token[1].data())
             || !isValidPassword(token[2].data())
             || !isValidUserName(token[4].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid AddUser UserID/PWD/UserName");
             }
-            auto pair = getPrivilege(token[3].data());
-            if(!pair.first) {return Exception("Invalid");}
+            auto pair = getLevel(token[3].data());
+            if(!pair.first) {return Exception("Invalid Level Input");}
             return Users.addUser(token[1].data(),token[2].data(),
                                  pair.second,token[4].data());
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid AddUser Command Length");
         }
     }
 
     Exception remove() {
         if(count == 2) {
             if(!isValidUserID(token[1].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid ID");
             } else {
                 return Users.removeUser(token[1].data());
             }
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Remove Command");
         }
     }
 
     Exception show() {
         if(!Users.checkLevel(Level_t::Customer)) {
-            return Exception("Invalid");
+            return Exception("Invalid Show Level");
         }
         if(count == 1) {
             return Library.showAll();
@@ -147,12 +146,12 @@ class commandManager {
                 case regex_t::showBookName:return Library.showBookName(str);
                 case regex_t::showKeyword: 
                     if(!isValidOneKeyword(str)) // One keyword only
-                         return Exception("Invalid");
+                         return Exception("Too many Keywords");
                     else return Library.showKeyword(str);
-                default: return Exception("Invalid");
+                default: return Exception("Invalid Regex Command");
             }
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Show Command Length");
         }
     }
 
@@ -160,12 +159,12 @@ class commandManager {
         if(count == 3) {
             if(!Users.checkLevel(Level_t::Customer)
             || !isValidISBN(token[1].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid Buy Level or Invalid ISBN");
             }
 
             auto pair1 = getQuantity(token[2].data());
             if(!pair1.first) {
-                return Exception("Invalid");
+                return Exception("Invalid Quantity");
             }
 
             Exception result = Library.remove(token[1].data(),pair1.second);
@@ -174,7 +173,7 @@ class commandManager {
             }
             return result;
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Buy Command Length");
         }
     }
 
@@ -188,26 +187,26 @@ class commandManager {
                 return Users.select(token[1].data());
             }
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Select Command Length");
         }
     }
 
     Exception modify() {
         if(count <= 1 || count >= 7 || !Users.checkLevel(Level_t::Librarian)) {
-            return Exception("Invalid");
+            return Exception("Invalid Modify Length Length or Invalid Modify Level");
         }
         auto Iptr = Users.selected();
-        if(Iptr == nullptr) return Exception("Invalid");
+        if(Iptr == nullptr) return Exception("No ISBN selected yet");
         bool optMap[6] = {1,0,0,0,0,0};
         Book tmp = Library.getBook(*Iptr);
         for(size_t i = 1 ; i < count ; ++i) {
             char *str;
             regex_t opt = getType(token[i].data(),str);
-            if(optMap[opt]) return Exception("Invalid");
+            if(optMap[opt]) return Exception("Repeat Regex or Invalid Regex of Modify");
             optMap[opt] = true;
             switch(opt) {
                 case regex_t::showISBN:
-                    if(tmp.ISBN == str) return Exception("Invalid");
+                    if(tmp.ISBN == str) return Exception("The same Modified ISBN");
                     tmp.ISBN = str;
                     break;
                 case regex_t::showAuthor:
@@ -223,7 +222,7 @@ class commandManager {
                     tmp.cost = std::stod(str);
                     break;
                 default:
-                    return Exception("Invalid");
+                    return Exception("This shouldn't happen");
             }
         }
         return Library.modify(*Iptr,tmp);
@@ -235,19 +234,19 @@ class commandManager {
             auto pair1 = getQuantity(token[1].data());
             auto pair2 = getMoney   (token[2].data());
             if(!Iptr || !pair1.first || !pair2.first) 
-                return Exception("Invalid");
+                return Exception("No ISBN selected or Invalid quantity/money");
             Exception result = Library.import(*Iptr,pair1.second);
             if(!result.test()) {
                 Hastin.add(0,pair2.second);
             }
             return result;
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Import Command Length");
         }
     }
     
     Exception showLog() {
-        return No_Exception();
+        return Exception("Not Implemented Yet U Silly");
     }
 
 
@@ -259,7 +258,7 @@ class commandManager {
             if(!pair.first) return Exception("Invalid");
             return Hastin.query(pair.second);
         } else {
-            return Exception("Invalid");
+            return Exception("Invalid Show Finance Command Length");
         }
     }
 
@@ -290,11 +289,14 @@ class commandManager {
 
   public:
     ~commandManager() = default;
-    commandManager()  = default;
+    commandManager() {
+    }
     /* Exception will be dealt within this function. */
     bool runCommand() noexcept {
         std::getline(std::cin,input);
+        if(!std::cin)  return false;
         Command_t opt = split(input);
+        if(count == 0) return No_Exception(); // Space only/
         switch(opt) {
             case Command_t::exit:   return false;
             case Command_t::login:  return login();
@@ -310,7 +312,7 @@ class commandManager {
             case Command_t::import: return import();
             case Command_t::log:    return showLog();
             case Command_t::show_f: return showFinance();
-            default: return Exception("Invalid\n");
+            default: return Exception("Unknown Command");
         }
     }
     
