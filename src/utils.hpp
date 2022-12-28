@@ -51,11 +51,12 @@ enum Command_t{
     unknown = 114514 // unknown case
 };
 
-enum Show_t {
+enum regex_t {
     showISBN     = 1,
     showAuthor   = 2,
     showBookName = 3,
     showKeyword  = 4,
+    showPrice    = 5,
     showError    = 0
 };
 
@@ -181,27 +182,33 @@ std::pair <bool,size_t> getQuantity(const char *str) {
                           quantity);
 }
 
-/* Get money from a char string */
-std::pair <bool,double> getMoney(const char *str) {
+/* Test whether a char is money type. */
+bool isMoney(const char *str) {
     int count1 = 0; // Digit number.
     int count2 = 0; // Digit number after dot.
     bool dot = false;  // Whether there is dot.
     if(*str == '.' || (*str == '0' && *(str + 1) != '.')) {
-        return std::make_pair(false,0.0);
+        return false;
     }
-
     while(*str) {
         ++count1;
         if(*str == '.' && !dot) {
             dot = true;
             ++str;
             continue;
-        } else if(!isdigit(*str)) return std::make_pair(false,0.0);
+        } else if(!isdigit(*str)) return false;
         if(dot) ++count2;
         ++str;
     }
-    return std::make_pair(count1 <= 13 && count2 == 2,std::stod(str - count1));
+    return count1 <= 13 && count2 == 2;
 }
+
+/* Get money from a char string */
+std::pair <bool,double> getMoney(const char *str) {
+    bool is = isMoney(str);
+    return std::make_pair(is,is ? std::stod(str) : 0.0);
+}
+
 
 /* Get Priviledge from an str. */
 std::pair <bool,Level_t> getPrivilege(const char *str) {
@@ -231,36 +238,47 @@ bool checkPrefix(const char *str,const char *src) {
     return true;
 }
 
-/* Get stow type and store the string in ans. */
-Show_t getShowType(const char *str,char *ans) {
+/**
+ * @brief Get regex type and store store the answer string in ans .
+ * 
+ * @param str The string to match.
+ * @param ans The string to store answer.
+ * @return regex_t 
+ */
+regex_t getType(char *str,char *&ans) {
     if(checkPrefix(str,"-ISBN=")) {
         str += 6;
-        strcpy(ans,str);
-        if(isValidISBN(ans)) return Show_t::showISBN;
-        else                 return Show_t::showError; 
+        ans = str;
+        if(isValidISBN(ans)) return regex_t::showISBN;
+        else                 return regex_t::showError; 
     } else if(checkPrefix(str,"-name=\"")) {
         str += 7;
-        size_t length = strlen(strcpy(ans,str));
-        if(ans[length - 1] != '\"') return Show_t::showError;
-        ans[length - 1] = '\0';
-        if(isValidBookName(ans)) return Show_t::showBookName;
-        else                     return Show_t::showError;
+        size_t length = strlen(ans = str);
+        if(ans[length - 1] != '\"') return regex_t::showError;
+        ans[length - 1] = 0;
+        if(isValidBookName(ans)) return regex_t::showBookName;
+        else                     return regex_t::showError;
     } else if(checkPrefix(str,"-author=\"")) {
         str += 9;
-        size_t length = strlen(strcpy(ans,str));
-        if(ans[length - 1] != '\"') return Show_t::showError;
-        ans[length - 1] = '\0';
-        if(isValidAuthor(ans)) return Show_t::showAuthor;
-        else                   return Show_t::showError;
+        size_t length = strlen(ans = str);
+        if(ans[length - 1] != '\"') return regex_t::showError;
+        ans[length - 1] = 0;
+        if(isValidAuthor(ans)) return regex_t::showAuthor;
+        else                   return regex_t::showError;
     } else if(checkPrefix(str,"-keyword=\"")) {
         str += 10;
-        size_t length = strlen(strcpy(ans,str));
-        if(ans[length - 1] != '\"') return Show_t::showError;
-        ans[length - 1] = '\0';
-        if(isValidOneKeyword(ans)) return Show_t::showKeyword;
-        else                       return Show_t::showError;
+        size_t length = strlen(ans = str);
+        if(ans[length - 1] != '\"') return regex_t::showError;
+        ans[length - 1] = 0;
+        if(isValidKeyword(ans)) return regex_t::showKeyword;
+        else                    return regex_t::showError;
+    } else if(checkPrefix(str,"-price=")) {
+        str += 7;
+        ans = str;
+        if(isMoney(ans)) return regex_t::showPrice;
+        else             return regex_t::showError;      
     }
-    return Show_t::showError;
+    return regex_t::showError;
 }
 
 }

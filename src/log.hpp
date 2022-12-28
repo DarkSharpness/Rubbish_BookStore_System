@@ -54,7 +54,7 @@ class LogWriter : private File{
         }
         return No_Exception();
     }
-    /* Query last num trade.(With '\n') */
+    /* Query last num trade.(With '\\n') */
     Exception query(size_t num = -1ULL) {
         if(!num) {
             std::cout << '\n';

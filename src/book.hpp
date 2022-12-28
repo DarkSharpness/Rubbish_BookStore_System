@@ -49,7 +49,8 @@ struct Book {
                   << '\t' << std::fixed << std::setprecision(2) << book.cost
                   << '\t' << book.quantity << '\n';
     }
-    /* Init a book with only ISBN. */
+
+    /* Initialize a book with only ISBN. */
     void init(const char *__ISBN) {
         ISBN    = __ISBN;
         Name    = "";

@@ -42,7 +42,8 @@ class AccountSystem {
         return (!stack.empty()) && stack.back().Level >= __MIN;
     }
 
-    inline const ISBN_t *selected() {
+    /* Get the iterator to selected ISBN */
+    inline ISBN_t *selected() {
         if(stack.empty() || stack.back().ISBN.empty()) return nullptr;
         else return &stack.back().ISBN;
     }
@@ -64,7 +65,7 @@ class AccountSystem {
     ~AccountSystem() = default;
 
     /* Just do initialization.*/
-    AccountSystem(): library("user1.bin","user2.bin") {
+    AccountSystem(): library("u1.bin","u2.bin") {
         if(library.empty()) {
             UserID_t __I = "root";
             Account &__tmp = Account_cache1;
@@ -151,7 +152,7 @@ class AccountSystem {
                       const Password_t &__PWD,
                       Level_t           __L,
                       const UserName_t &__Name) {
-        if(!checkLevel(__L + 1)) return Exception("Invalid");
+        if(!checkLevel(std::min(__L + 1,3))) return Exception("Invalid");
 
         Account &__tmp = Account_cache1;
         __tmp.init(__Name,__PWD,__L);
@@ -203,9 +204,17 @@ class BookSystem {
         libISBN("b1.bin","b2.bin"),
         libAuthor("b3.bin","b4.bin"),
         libBookName("b5.bin","b6.bin"),
-        libKeyword("b7.bin","b8.bin") {
-    }
+        libKeyword("b7.bin","b8.bin") {}
 
+    double tradeMoney; // Record last trade sum.
+
+
+    /* Get a book from an ISBN */
+    Book &getBook(const ISBN_t &__I) {
+        arrB.clear();
+        libISBN.findAll(__I,arrB);
+        return arrB.front();
+    }
 
     /* Print the lib. */
     Exception showAll() noexcept {
@@ -261,9 +270,10 @@ class BookSystem {
     /* Remove elements.(buy books) */
     Exception remove(const ISBN_t &__I,size_t __q) {
         if(!libISBN.modify_if(__I,
-                            [=](Book &__B)->bool { 
+                            [&](Book &__B)->bool { 
                                 if(__B.quantity < __q) return false;
                                 __B.quantity -= __q;
+                                tradeMoney = __q * __B.cost; 
                                 return true;
                             })) {
             return Exception("Invalid");
@@ -286,6 +296,9 @@ class BookSystem {
             libISBN.modify(__I,__B);
         } else {
             arrB.clear();
+            libISBN.findAll(__B.ISBN,arrB);
+            if(!arrB.empty()) return Exception("Invalid");
+
             libISBN.findAll(__I,arrB);
             const Book &cur = arrB.front();
 

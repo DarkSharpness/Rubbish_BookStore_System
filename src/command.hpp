@@ -32,13 +32,12 @@ const std::map <std::string,Command_t> commandMap = {
 class commandManager {
   private:
     #define MAXN 256
-    LogWriter log;           // Write log only.
     std::string input;       // Input buffer.
     std::string token[MAXN]; // Maximum string number.
     size_t count; // Count of tokens
     BookSystem    Library;
     AccountSystem Users;
-
+    LogWriter     Hastin;
 
     Exception login() {
         if(count == 2) {
@@ -80,6 +79,7 @@ class commandManager {
             return Exception("Invalid");
         }
     }
+
     Exception changePWD() {
         if(count == 3) {
             if(!isValidUserID  (token[1].data())
@@ -127,6 +127,8 @@ class commandManager {
             } else {
                 return Users.removeUser(token[1].data());
             }
+        } else {
+            return Exception("Invalid");
         }
     }
 
@@ -135,15 +137,18 @@ class commandManager {
             return Exception("Invalid");
         }
         if(count == 1) {
-            Library.showAll();
+            return Library.showAll();
         } else if(count == 2) {
-            char str[256];
-            Show_t opt = getShowType(token[1].data(),str);
+            char *str;
+            regex_t opt = getType(token[1].data(),str);
             switch(opt) {
-                case Show_t::showISBN:    return Library.showISBN(str);  
-                case Show_t::showAuthor:  return Library.showAuthor(str);
-                case Show_t::showBookName:return Library.showBookName(str);
-                case Show_t::showKeyword: return Library.showKeyword(str);
+                case regex_t::showISBN:    return Library.showISBN(str);  
+                case regex_t::showAuthor:  return Library.showAuthor(str);
+                case regex_t::showBookName:return Library.showBookName(str);
+                case regex_t::showKeyword: 
+                    if(!isValidOneKeyword(str)) // One keyword only
+                         return Exception("Invalid");
+                    else return Library.showKeyword(str);
                 default: return Exception("Invalid");
             }
         } else {
@@ -152,60 +157,113 @@ class commandManager {
     }
 
     Exception buy() {
-        if(!Users.checkLevel(Level_t::Customer)) {
-            return Exception("Invalid");
-        }
         if(count == 3) {
-            auto pair1 = getQuantity(token[1].data());
-            auto pair2 = getMoney   (token[2].data());
-            if(!pair1.first || !pair2.first) {
+            if(!Users.checkLevel(Level_t::Customer)
+            || !isValidISBN(token[1].data())) {
                 return Exception("Invalid");
             }
 
-            const ISBN_t *Iptr = Users.selected();
-            if(Iptr == nullptr) return Exception("Invalid");
+            auto pair1 = getQuantity(token[2].data());
+            if(!pair1.first) {
+                return Exception("Invalid");
+            }
 
-            return Library.remove(*Iptr,pair1.second);
+            Exception result = Library.remove(token[1].data(),pair1.second);
+            if(!result.test()) {
+                Hastin.add(Library.tradeMoney,0);
+            }
+            return result;
         } else {
             return Exception("Invalid");
         }
     }
 
     Exception select() {
-        if(!Users.checkLevel(Level_t::Customer)) {
-            return Exception("Invalid");
-        }
         if(count == 2) {
-            if(!isValidISBN(token[1].data())) {
+            if(!Users.checkLevel(Level_t::Librarian)
+            || !isValidISBN(token[1].data())) {
                 return Exception("Invalid");
             } else {
+                Library.select(token[1].data());
                 return Users.select(token[1].data());
             }
         } else {
             return Exception("Invalid");
         }
     }
+
     Exception modify() {
-
+        if(count <= 1 || count >= 7 || !Users.checkLevel(Level_t::Librarian)) {
+            return Exception("Invalid");
+        }
+        auto Iptr = Users.selected();
+        if(Iptr == nullptr) return Exception("Invalid");
+        bool optMap[6] = {1,0,0,0,0,0};
+        Book tmp = Library.getBook(*Iptr);
+        for(size_t i = 1 ; i < count ; ++i) {
+            char *str;
+            regex_t opt = getType(token[i].data(),str);
+            if(optMap[opt]) return Exception("Invalid");
+            optMap[opt] = true;
+            switch(opt) {
+                case regex_t::showISBN:
+                    if(tmp.ISBN == str) return Exception("Invalid");
+                    tmp.ISBN = str;
+                    break;
+                case regex_t::showAuthor:
+                    tmp.Author = str;
+                    break;
+                case regex_t::showBookName:
+                    tmp.Name = str;
+                    break;
+                case regex_t::showKeyword:
+                    tmp.Keyword = str;
+                    break;
+                case regex_t::showPrice:
+                    tmp.cost = std::stod(str);
+                    break;
+                default:
+                    return Exception("Invalid");
+            }
+        }
+        return Library.modify(*Iptr,tmp);
     }
-    Exception import() {
 
+    Exception import() {
+        if(count == 3 && Users.checkLevel(Level_t::Librarian)) {
+            auto Iptr  = Users.selected();
+            auto pair1 = getQuantity(token[1].data());
+            auto pair2 = getMoney   (token[2].data());
+            if(!Iptr || !pair1.first || !pair2.first) 
+                return Exception("Invalid");
+            Exception result = Library.import(*Iptr,pair1.second);
+            if(!result.test()) {
+                Hastin.add(0,pair2.second);
+            }
+            return result;
+        } else {
+            return Exception("Invalid");
+        }
     }
     
     Exception showLog() {
-
+        return No_Exception();
     }
 
-        
+
     Exception showFinance() {
-
-
-        
+        if(count == 2) {
+            return Hastin.query();
+        } else if(count == 3) {
+            auto pair = getQuantity(token[2].data());
+            if(!pair.first) return Exception("Invalid");
+            return Hastin.query(pair.second);
+        } else {
+            return Exception("Invalid");
+        }
     }
-
 
   private:
-
     /* Just Split the string and get command. */
     Command_t split(std::string &str) noexcept {
         count = 0;
@@ -231,10 +289,10 @@ class commandManager {
 
 
   public:
-    ~commandManager() {}
-    commandManager(): log() {}
+    ~commandManager() = default;
+    commandManager()  = default;
     /* Exception will be dealt within this function. */
-    bool runCommand() noexcept{
+    bool runCommand() noexcept {
         std::getline(std::cin,input);
         Command_t opt = split(input);
         switch(opt) {

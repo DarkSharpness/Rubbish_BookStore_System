@@ -21,14 +21,14 @@ class Exception {
     /* With Exception. */
     Exception(const std::string &__m) {isException = true;message = __m;}
     /* Test whether Exception happened. */
-    bool test() const {return isException ==  1;}
+    bool test() const {return isException;}
     /* Change to bool and write exception message. */
     operator bool() const{
         if(test()) std::cout << message << '\n';
         return true;
     }
 };
-std::string Exception::message;
+std::string Exception::message = "Invalid";
 
 /* No Exception Case */
 inline Exception No_Exception() {return Exception();}
