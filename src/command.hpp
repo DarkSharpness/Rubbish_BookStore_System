@@ -4,7 +4,7 @@
 #include "system.hpp"
 #include "log.hpp"
 #include <map>
-
+#include <bitset>
 
 namespace dark {
 
@@ -67,7 +67,7 @@ class commandManager {
         if(count == 4) {
             if(!isValidUserID  (token[1].data())
             || !isValidPassword(token[2].data())
-            || !isValidPassword(token[3].data())) {
+            || !isValidUserName(token[3].data())) {
                 return Exception("Invalid Register UserID/PWD");
             } else {
                 return Users.registering(token[1].data(),
@@ -197,13 +197,13 @@ class commandManager {
         }
         auto Iptr = Users.selected();
         if(Iptr == nullptr) return Exception("No ISBN selected yet");
-        bool optMap[6] = {1,0,0,0,0,0};
+        std::bitset <6> optMap = 1;
         Book tmp = Library.getBook(*Iptr);
         for(size_t i = 1 ; i < count ; ++i) {
             char *str;
             regex_t opt = getType(token[i].data(),str);
-            if(optMap[opt]) return Exception("Repeat Regex or Invalid Regex of Modify");
-            optMap[opt] = true;
+            if(optMap.test(opt)) return Exception("Repeat Regex or Invalid Regex of Modify");
+            optMap.set(opt);
             switch(opt) {
                 case regex_t::showISBN:
                     if(tmp.ISBN == str) return Exception("The same Modified ISBN");
@@ -225,7 +225,11 @@ class commandManager {
                     return Exception("This shouldn't happen");
             }
         }
-        return Library.modify(*Iptr,tmp);
+        Exception result = Library.modify(*Iptr,tmp,optMap);
+        if(!result.test() && *Iptr != tmp.ISBN) {
+            Users.modifyISBN(*Iptr,tmp.ISBN);
+        }
+        return result;
     }
 
     Exception import() {
@@ -285,20 +289,13 @@ class commandManager {
             return iter->second;
         }
     }
-
-
-  public:
-    ~commandManager() = default;
-    commandManager() {
-    }
-    /* Exception will be dealt within this function. */
-    bool runCommand() noexcept {
+    Exception run() {
         std::getline(std::cin,input);
-        if(!std::cin)  return false;
+        if(!std::cin)  return Exit_Exception();
         Command_t opt = split(input);
         if(count == 0) return No_Exception(); // Space only/
         switch(opt) {
-            case Command_t::exit:   return false;
+            case Command_t::exit:   return Exit_Exception();
             case Command_t::login:  return login();
             case Command_t::logout: return logout();
             case Command_t::reg:    return reg();
@@ -315,7 +312,20 @@ class commandManager {
             default: return Exception("Unknown Command");
         }
     }
+
+  public:
+    ~commandManager() = default;
+    commandManager() {
+    }
+    /* Exception will be dealt within this function. */
     
+    bool runCommand() noexcept {
+        Exception ans = run();
+        if(ans.test()) { /* Write Log. */
+
+        }
+        return ans; /* Here , Exception will be dealt */
+    }
 };
 
 

@@ -35,7 +35,6 @@ class AccountSystem {
     BlockList <UserID_t,Account> library; // Account library
 
     Account Account_cache1;
-    Account Account_cache2;
     friend class commandManager;
 
 
@@ -54,11 +53,11 @@ class AccountSystem {
 
     /* Tries to find the User according to __ID.
        Store the data in arr as the return value. */
-    bool getUser(const UserID_t &__ID) noexcept {
+    bool getUser(const UserID_t &__ID) {
         arr.clear();
         library.findAll(__ID,arr);
         if(arr.empty()) return false;
-        
+
         // Debug use!
         if(arr.size() > 1) throw "Something unexpected happened in system.hpp";
 
@@ -142,10 +141,12 @@ class AccountSystem {
                              const Password_t &__NEW) {
         if(!checkLevel(Level_t::Manager)) return Exception("Not enough Level");
 
-        Account &__new = Account_cache1;
-        __new.Password = __NEW;
 
-        if(!library.modify(__ID,__new)) {
+        if(!library.modify_if(__ID,
+                            [&](Account &__A)->bool { 
+                                __A.Password = __NEW;
+                                return true;
+                            })) {
                return Exception("No such User");
         } else return No_Exception();
     }
@@ -182,6 +183,15 @@ class AccountSystem {
         stack.back().ISBN = __I;
         return No_Exception();
     }
+
+    /* Modify OLD ISBN when NEWISBN is changed. */
+    void modifyISBN(const ISBN_t &__OLD,const ISBN_t &__NEW) {
+        for(auto &User : stack) {
+            if(User.ISBN == __OLD) User.ISBN = __NEW;
+        }
+    }
+
+
 };
 
 
@@ -208,7 +218,10 @@ class BookSystem {
         libISBN     ("bin\\b1.bin","bin\\b2.bin"),
         libAuthor   ("bin\\b3.bin","bin\\b4.bin"),
         libBookName ("bin\\b5.bin","bin\\b6.bin"),
-        libKeyword  ("bin\\b7.bin","bin\\b8.bin") {}
+        libKeyword  ("bin\\b7.bin","bin\\b8.bin") {
+        
+
+    }
 
     double tradeMoney; // Record last trade sum.
 
@@ -291,12 +304,18 @@ class BookSystem {
         Book &cur    = Book_cache1; // Empty book
         cur.init(__I);
         libISBN.insert(__I,cur);
+        // libAuthor.insert("",__I);
+        // libBookName.insert("",__I);
+        // libKeyword.insert("",__I);
         return No_Exception();
     }
 
     /* Modify book with ISBN = _I to another Book. */
-    Exception modify(const ISBN_t &__I,const Book &__B) {
+    Exception modify(const ISBN_t &__I,const Book &__B,std::bitset<6> &optMap) {
         if(__I == __B.ISBN) { // modify Book only.
+            arrB.clear();
+            libISBN.findAll(__I,arrB);
+
             libISBN.modify(__I,__B);
         } else {
             arrB.clear();
@@ -304,25 +323,44 @@ class BookSystem {
             if(!arrB.empty()) return Exception("ISBN existed");
 
             libISBN.findAll(__I,arrB);
-            const Book &cur = arrB.front();
 
-            libISBN.erase(__I,cur);
-            libISBN.insert(__I,__B);
+            libISBN.erase(__I,arrB.front());
+            libISBN.insert(__B.ISBN,__B);
+        }
 
-            libAuthor.erase(cur.Author,__I);
-            libAuthor.insert(cur.Author,__B.ISBN);
-            libBookName.erase(cur.Name,__I);
-            libBookName.insert(cur.Name,__B.ISBN);
 
+        const Book &cur = arrB.front();
+
+        if(optMap.test(2)) {
+            if(!cur.Author.empty()) libAuthor.erase(cur.Author,__I);
+            if(!__B.Author.empty()) libAuthor.insert(__B.Author,__B.ISBN);
+        }
+
+        if(optMap.test(3)){
+            if(!cur.Name.empty()) libBookName.erase(cur.Name,__I);
+            if(!__B.Name.empty()) libBookName.insert(__B.Name,__B.ISBN);
+        }
+
+        if(optMap.test(4)) {
             Keyword_t key;
-            const char *str = __B.Keyword;
-            while(true) {
-                bool isEnd = !getKeyword(key,str);
-                libKeyword.erase(key,__I);
-                libKeyword.insert(key,__B.ISBN);
-                if(isEnd) break;
+            if(!cur.Keyword.empty()) {
+                const char *str = cur.Keyword;
+                while(true) {
+                    bool isEnd = !getKeyword(key,str);
+                    libKeyword.erase(key,__I);
+                    if(isEnd) break;
+                }
+            }
+            if(!__B.Keyword.empty()) {
+                const char *str = __B.Keyword;
+                while(true) {
+                    bool isEnd = !getKeyword(key,str);
+                    libKeyword.insert(key,__B.ISBN);
+                    if(isEnd) break;
+                }
             }
         }
+        
         return No_Exception();
     }
 

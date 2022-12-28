@@ -36,7 +36,7 @@ class LogWriter : private File{
             read(lastin);
             read(lastout);
 
-            std::cout << lastin << " and " << lastout << '\n';
+            // std::cout << lastin << " and " << lastout << '\n';
 
             income  += lastin ;
             outcome += lastout;

@@ -200,7 +200,7 @@ inline bool isMoney(const char *str) {
         if(dot) ++count2;
         ++str;
     }
-    return count1 <= 13 && count2 == 2;
+    return count1 <= 13 && count2 <= 2;
 }
 
 /* Get money from a char string */
@@ -216,7 +216,8 @@ inline std::pair <bool,Level_t> getLevel(const char *str) {
                        && !*(str + 1),Level_t(*str ^ '0'));
 }
 
-/* Get one Keyword.False if no more keyword. */
+/* Get one Keyword.False if no more keyword.
+   Store the answer in __K(first element). */
 inline bool getKeyword(Keyword_t &__K,const char *&str) {
     size_t index = 0;
     while(*str && *str != '|') {
