@@ -171,7 +171,7 @@ inline std::pair <bool,size_t> getQuantity(const char *str) {
         ++str,++count;
     }
 
-    return std::make_pair(quantity < 2147483647ULL && count <= 10 && count,
+    return std::make_pair(quantity < 2147483648ULL && count <= 10 && count,
                           quantity);
 }
 
