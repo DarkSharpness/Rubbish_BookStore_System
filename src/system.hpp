@@ -68,7 +68,7 @@ class AccountSystem {
     ~AccountSystem() = default;
 
     /* Just do initialization.*/
-    AccountSystem(): library("bin\\u1.bin","bin\\u2.bin") {
+    AccountSystem(): library("bin/u1.bin","bin/u2.bin") {
         if(library.empty()) {
             UserID_t __I = "root";
             Account &__tmp = Account_cache1;
@@ -213,10 +213,10 @@ class BookSystem {
   public:
     ~BookSystem() = default;
     BookSystem(): 
-        libISBN     ("bin\\b1.bin","bin\\b2.bin"),
-        libAuthor   ("bin\\b3.bin","bin\\b4.bin"),
-        libBookName ("bin\\b5.bin","bin\\b6.bin"),
-        libKeyword  ("bin\\b7.bin","bin\\b8.bin") {
+        libISBN     ("bin/b1.bin","bin/b2.bin"),
+        libAuthor   ("bin/b3.bin","bin/b4.bin"),
+        libBookName ("bin/b5.bin","bin/b6.bin"),
+        libKeyword  ("bin/b7.bin","bin/b8.bin") {
         
 
     }

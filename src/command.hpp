@@ -218,7 +218,7 @@ class commandManager {
                     tmp.Name = str;
                     break;
                 case regex_t::showKeyword:
-                    if(checkRepeatKeyword(str)) return Exception("The same Modified ISBN");
+                    if(!checkRepeatKeyword(str)) return Exception("Repeated Keyword");
                     tmp.Keyword = str;
                     break;
                 case regex_t::showPrice:
