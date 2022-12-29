@@ -249,7 +249,7 @@ class commandManager {
             auto Iptr  = Users.selected();
             auto pair1 = getQuantity(token[1].data());
             auto pair2 = getMoney   (token[2].data());
-            if(!Iptr || !pair1.first || !pair2.first) 
+            if(!Iptr || !pair1.first || !pair2.first || pair2.second <= 1e-7) 
                 return Exception("No ISBN selected or Invalid quantity/money");
             Exception result = Library.import(*Iptr,pair1.second);
             if(!result.test()) {

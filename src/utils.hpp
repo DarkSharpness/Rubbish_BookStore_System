@@ -195,7 +195,7 @@ inline bool isValidMoney(const char *str) {
         if(dot) ++count2;
         ++str;
     }
-    return count1 <= 13 && count2 <= 2 && (!dot || count2);
+    return count1 <= 13 && (!dot || count2);
 }
 
 /* Get money from a char string */
