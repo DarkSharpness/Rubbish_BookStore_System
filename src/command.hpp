@@ -184,7 +184,7 @@ class commandManager {
         if(count == 2) {
             if(!Users.checkLevel(Level_t::Librarian)
             || !isValidISBN(token[1].data())) {
-                return Exception("Invalid");
+                return Exception("Invalid select Level or Invalid ISBN");
             } else {
                 Exception result = Users.select(token[1].data());
                 if(!result.test()) {
