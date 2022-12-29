@@ -261,7 +261,7 @@ class commandManager {
             return Exception("Invalid Import Command Length");
         }
     }
-    
+
     Exception showLog() {
         return Exception("Not Implemented Yet U Silly");
     }
