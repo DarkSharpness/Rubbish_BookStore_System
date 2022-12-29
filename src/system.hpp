@@ -178,8 +178,6 @@ class AccountSystem {
 
     /* Select an ISBN for current User. */
     Exception select(const ISBN_t &__I) {
-        if(!checkLevel(Level_t::Customer)) return Exception("Not logged in");
-
         stack.back().ISBN = __I;
         return No_Exception();
     }
@@ -301,12 +299,9 @@ class BookSystem {
 
     /* Select one book and create if not existed. */
     Exception select(const ISBN_t &__I) noexcept {
-        Book &cur    = Book_cache1; // Empty book
+        Book &cur = Book_cache1; // Empty book
         cur.init(__I);
         libISBN.insert(__I,cur);
-        // libAuthor.insert("",__I);
-        // libBookName.insert("",__I);
-        // libKeyword.insert("",__I);
         return No_Exception();
     }
 
@@ -346,7 +341,7 @@ class BookSystem {
             if(!cur.Keyword.empty()) {
                 const char *str = cur.Keyword;
                 while(true) {
-                    bool isEnd = !getKeyword(key,str);
+                    bool isEnd = !getKeyword((char *)key,str);
                     libKeyword.erase(key,__I);
                     if(isEnd) break;
                 }
@@ -354,7 +349,7 @@ class BookSystem {
             if(!__B.Keyword.empty()) {
                 const char *str = __B.Keyword;
                 while(true) {
-                    bool isEnd = !getKeyword(key,str);
+                    bool isEnd = !getKeyword((char *)key,str);
                     libKeyword.insert(key,__B.ISBN);
                     if(isEnd) break;
                 }

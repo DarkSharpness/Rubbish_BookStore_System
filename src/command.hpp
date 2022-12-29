@@ -170,6 +170,8 @@ class commandManager {
             Exception result = Library.remove(token[1].data(),pair1.second);
             if(!result.test()) {
                 Hastin.add(Library.tradeMoney,0);
+                std::cout << std::fixed << std::setprecision(2)
+                          << Library.tradeMoney << '\n';
             }
             return result;
         } else {
@@ -216,6 +218,7 @@ class commandManager {
                     tmp.Name = str;
                     break;
                 case regex_t::showKeyword:
+                    if(checkRepeatKeyword(str)) return Exception("The same Modified ISBN");
                     tmp.Keyword = str;
                     break;
                 case regex_t::showPrice:
@@ -283,8 +286,9 @@ class commandManager {
         // Not found.
         if(iter == commandMap.end()) {return Command_t::unknown;}
         else if(iter->second == Command_t::show) {
-            return token[1] == "finance" ? Command_t::show_f :
-                                           Command_t::show   ;
+            return count >= 2 && token[1] == "finance" ? 
+                                Command_t::show_f :
+                                Command_t::show   ;
         } else {
             return iter->second;
         }

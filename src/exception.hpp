@@ -26,11 +26,11 @@ class Exception {
     bool test() const {return isException;}
     /* Change to bool and write exception message. */
     operator bool() const{
-        static size_t count = 0;
+        // static size_t count = 0;
         if(isException == 1ULL)
             std::cout 
-                // << "Invalid\n";
-                << count++ << ':' <<  message << '\n';
+                << "Invalid\n";
+                // << count++ << ':' <<  message << '\n';
         return ~isException;
     }
 };

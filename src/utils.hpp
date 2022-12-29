@@ -4,6 +4,7 @@
 
 #include "string.hpp"
 #include "exception.hpp"
+#include <vector>
 
 namespace dark {
 
@@ -169,7 +170,7 @@ inline bool isValidOneKeyword(const char *str) {
 /* Get quantity from a char string */
 inline std::pair <bool,size_t> getQuantity(const char *str) {
     if(*str == '0') {
-        return std::make_pair(!*(str + 1),0ULL);
+        return std::make_pair(false,0ULL);
     }
     int count = 0;
     size_t quantity = 0;
@@ -187,8 +188,8 @@ inline bool isMoney(const char *str) {
     int count1 = 0; // Digit number.
     int count2 = 0; // Digit number after dot.
     bool dot = false;  // Whether there is dot.
-    if(*str == '.' || (*str == '0' && *(str + 1) != '.')) {
-        return false;
+    if(*str == '.' || (*str == '0' && *(str + 1) != '.' && *(str + 1))) {
+        return false; // if 0 then 0 or 0.0 or 0.00
     }
     while(*str) {
         ++count1;
@@ -200,7 +201,7 @@ inline bool isMoney(const char *str) {
         if(dot) ++count2;
         ++str;
     }
-    return count1 <= 13 && count2 <= 2;
+    return count1 <= 13 && count2 <= 2 && (!dot || count2);
 }
 
 /* Get money from a char string */
@@ -218,7 +219,7 @@ inline std::pair <bool,Level_t> getLevel(const char *str) {
 
 /* Get one Keyword.False if no more keyword.
    Store the answer in __K(first element). */
-inline bool getKeyword(Keyword_t &__K,const char *&str) {
+inline bool getKeyword(char *__K,const char *&str) {
     size_t index = 0;
     while(*str && *str != '|') {
         __K[index++] = *(str++);
@@ -228,7 +229,6 @@ inline bool getKeyword(Keyword_t &__K,const char *&str) {
     else        return true; // skip this |
 }
 
-/// TODO: check the following part.
 
 
 /* Check whether prefix of str is src. */
@@ -281,6 +281,20 @@ inline regex_t getType(char *str,char *&ans) {
     }
     return regex_t::showError;
 }
+
+
+inline bool checkRepeatKeyword(const char *str) {
+    std::vector <Keyword_t> keys;
+    while(true) {
+        bool isEnd = !getKeyword((char *)keys.emplace_back(),str);
+        for(size_t i = 0 ; i != keys.size() - 1 ; ++i) {
+            if(keys[i] == keys.back()) return false;
+        }
+        if(isEnd) break;
+    }
+    return true;
+}
+
 
 }
 

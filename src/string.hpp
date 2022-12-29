@@ -50,6 +50,7 @@ class string {
 
     /* Force to change into a cstr. */
     operator const char *() const {return str;}
+    explicit operator char *() {return str;}
 
     /* Reference to data. */
 
