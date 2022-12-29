@@ -22,6 +22,8 @@ class Exception {
     Exception(std::string &&__m) {isException = true;message = std::move(__m);}
     /* With Exception. */
     Exception(const std::string &__m) {isException = true;message = __m;}
+    /* Give out Exception information */
+    std::string &what() const {return message;}
     /* Test whether Exception happened.(Only Normal is no exception.) */
     bool test() const {return isException;}
     /* Change to bool and write exception message. */
