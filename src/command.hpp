@@ -259,10 +259,14 @@ class commandManager {
 
     Exception showFinance() {
         if(count == 2) {
+            if(!Users.checkLevel(Level_t::Manager))
+                return Exception("Not enough Level to show Finance");
             return Hastin.query();
         } else if(count == 3) {
+            if(!Users.checkLevel(Level_t::Manager))
+                return Exception("Not enough Level to show Finance");
             auto pair = getQuantity(token[2].data());
-            if(!pair.first) return Exception("Invalid");
+            if(!pair.first) return Exception("Invalid Quantity");
             return Hastin.query(pair.second);
         } else {
             return Exception("Invalid Show Finance Command Length");

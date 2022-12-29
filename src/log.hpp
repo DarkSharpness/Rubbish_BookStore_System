@@ -64,7 +64,7 @@ class LogWriter : private File{
             double sumout;
             seekg(0);
             read(count);
-            if(num > count && ~num) return Exception("Invalid");
+            if(num > count && ~num) return Exception("Query over count.");
             read(sumin);
             read(sumout);
             if(~num && num != count) {
