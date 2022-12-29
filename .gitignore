@@ -1,6 +1,5 @@
 bookstore-testcases/
 *.exe
-*.txt
 build/
 .cache/
 docs/README.md
