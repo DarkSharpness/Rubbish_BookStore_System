@@ -42,7 +42,7 @@ class commandManager {
         if(count == 2) {
             if(!isValidUserID(token[1].data())) {
                 return Exception("Invalid Login User ID");
-            } 
+            }
             return Users.login(token[1].data());
         } else if(count == 3) {
             if(!isValidUserID  (token[1].data()) 
@@ -68,7 +68,7 @@ class commandManager {
             if(!isValidUserID  (token[1].data())
             || !isValidPassword(token[2].data())
             || !isValidUserName(token[3].data())) {
-                return Exception("Invalid Register UserID/PWD");
+                return Exception("Invalid Register UserID/PWD/Name");
             } else {
                 return Users.registering(token[1].data(),
                                          token[2].data(),
@@ -134,6 +134,7 @@ class commandManager {
         if(!Users.checkLevel(Level_t::Customer)) {
             return Exception("Invalid Show Level");
         }
+
         if(count == 1) {
             return Library.showAll();
         } else if(count == 2) {
@@ -143,7 +144,7 @@ class commandManager {
                 case regex_t::showISBN:    return Library.showISBN(str);  
                 case regex_t::showAuthor:  return Library.showAuthor(str);
                 case regex_t::showBookName:return Library.showBookName(str);
-                case regex_t::showKeyword: 
+                case regex_t::showKeyword:
                     if(!isValidOneKeyword(str)) // One keyword only
                          return Exception("Too many Keywords");
                     else return Library.showKeyword(str);
@@ -184,8 +185,8 @@ class commandManager {
             || !isValidISBN(token[1].data())) {
                 return Exception("Invalid");
             } else {
-                Library.select(token[1].data());
                 return Users.select(token[1].data());
+                Library.select(token[1].data());
             }
         } else {
             return Exception("Invalid Select Command Length");
@@ -193,17 +194,20 @@ class commandManager {
     }
 
     Exception modify() {
-        if(count <= 1 || count >= 7 || !Users.checkLevel(Level_t::Librarian)) {
+        if(count <= 1 || count >= 8 || !Users.checkLevel(Level_t::Librarian)) {
             return Exception("Invalid Modify Length Length or Invalid Modify Level");
         }
+
         auto Iptr = Users.selected();
         if(Iptr == nullptr) return Exception("No ISBN selected yet");
+
         std::bitset <6> optMap = 1;
-        Book tmp = Library.getBook(*Iptr);
+        Book &tmp = Library.getBook(*Iptr);
+
         for(size_t i = 1 ; i < count ; ++i) {
             char *str;
             regex_t opt = getType(token[i].data(),str);
-            if(optMap.test(opt)) return Exception("Repeat Regex or Invalid Regex of Modify");
+            if(optMap.test(opt)) return Exception("Repeat Regex or Invalid Regex in Modify");
             optMap.set(opt);
             switch(opt) {
                 case regex_t::showISBN:
@@ -227,10 +231,13 @@ class commandManager {
                     return Exception("This shouldn't happen");
             }
         }
-        Exception result = Library.modify(*Iptr,tmp,optMap);
-        if(!result.test() && *Iptr != tmp.ISBN) {
+
+        Exception result = Library.modify(tmp,optMap);
+
+        if(!result.test() && optMap.test(1)) {
             Users.modifyISBN(*Iptr,tmp.ISBN);
         }
+
         return result;
     }
 

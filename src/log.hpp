@@ -19,6 +19,7 @@ class LogWriter : private File{
             write(count);
         }
     }
+
     /* Write income and outcome. */
     Exception add(double income,double outcome) noexcept {
         size_t count;

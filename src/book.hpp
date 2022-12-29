@@ -30,14 +30,14 @@ struct Book {
         return *this;
     }
 
-    /* Compare by ISBN only */
+    /* Compare by all equal. */
     int Compare(const Book &rhs) const{
-        return strcmp(ISBN,rhs.ISBN);
+        return 0;
     }
 
-    /* Compare by ISBN only */
+    /* Compare by all equal. */
     bool operator <(const Book &rhs) const {
-        return strcmp(ISBN,rhs.ISBN) < 0;
+        return false;
     }
 
     /* Custom Output for a bookbase object.(With \\n) */

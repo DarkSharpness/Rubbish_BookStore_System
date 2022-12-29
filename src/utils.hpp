@@ -241,7 +241,7 @@ inline bool checkPrefix(const char *str,const char *src) {
  * 
  * @param str The string to match.
  * @param ans The string to store answer.
- * @return regex_t 
+ * @return regex_t The regex matched.
  */
 inline regex_t getType(char *str,char *&ans) {
     if(checkPrefix(str,"-ISBN=")) {
@@ -274,7 +274,7 @@ inline regex_t getType(char *str,char *&ans) {
         str += 7;
         ans = str;
         if(isValidMoney(ans)) return regex_t::showPrice;
-        else             return regex_t::showError;      
+        else                  return regex_t::showError;      
     }
     return regex_t::showError;
 }

@@ -169,7 +169,8 @@ class AccountSystem {
     /* Remove a user. */
     Exception removeUser(const UserID_t &__ID) {
         if(!checkLevel(Level_t::Manager))       return Exception("Not enough Level");
-        if(instack.find(__ID) != instack.end()) return Exception("Can't remove logged");
+        auto iter = instack.find(__ID);
+        if(iter != instack.end() && iter->second) return Exception("Can't remove logged");
 
         Account &__tmp = Account_cache1;
         if(!library.erase(__ID,__tmp))  return Exception("No such User to delete");
@@ -178,11 +179,12 @@ class AccountSystem {
 
     /* Select an ISBN for current User. */
     Exception select(const ISBN_t &__I) {
+        if(!checkLevel(Level_t::Librarian)) return Exception("Not enough Level");
         stack.back().ISBN = __I;
         return No_Exception();
     }
 
-    /* Modify OLD ISBN when NEWISBN is changed. */
+    /* Modify OLD ISBN when NEW ISBN is changed. */
     void modifyISBN(const ISBN_t &__OLD,const ISBN_t &__NEW) {
         for(auto &User : stack) {
             if(User.ISBN == __OLD) User.ISBN = __NEW;
@@ -207,7 +209,8 @@ class BookSystem {
     std::vector <Book>   arrB; // Book Return List;
     std::vector <ISBN_t> arrI; // ISBN Return List
     Book Book_cache1;
-    Book Book_cache2;
+    double tradeMoney; // Record last trade sum.
+
     friend class commandManager;
 
   public:
@@ -221,15 +224,7 @@ class BookSystem {
 
     }
 
-    double tradeMoney; // Record last trade sum.
 
-
-    /* Get a book from an ISBN */
-    Book &getBook(const ISBN_t &__I) noexcept {
-        arrB.clear();
-        libISBN.findAll(__I,arrB);
-        return arrB.front();
-    }
 
     /* Print the lib. */
     Exception showAll() noexcept {
@@ -305,47 +300,53 @@ class BookSystem {
         return No_Exception();
     }
 
+    /* Get the book with given ISBN */
+    Book &getBook(const ISBN_t &__I) noexcept {
+        arrB.clear();
+        libISBN.findAll(__I,arrB);
+        return Book_cache1 = arrB.front();
+    }
+
+
     /* Modify book with ISBN = _I to another Book. */
-    Exception modify(const ISBN_t &__I,const Book &__B,std::bitset<6> &optMap) {
-        if(__I == __B.ISBN) { // modify Book only.
-            arrB.clear();
-            libISBN.findAll(__I,arrB);
-
-            libISBN.modify(__I,__B);
-        } else {
-            arrB.clear();
-            libISBN.findAll(__B.ISBN,arrB);
-            if(!arrB.empty()) return Exception("ISBN existed");
-
-            libISBN.findAll(__I,arrB);
-
-            libISBN.erase(__I,arrB.front());
-            libISBN.insert(__B.ISBN,__B);
-        }
-
+    Exception modify(const Book &__B,const std::bitset <6> &optMap) {
+        // Now arrB == the Book with given ISBN __I
+        // __B holds the Book which has gone through modification.
 
         const Book &cur = arrB.front();
 
+        if(optMap.test(1)) {
+            libISBN.findAll(__B.ISBN,arrB);
+            if(arrB.size() != 1) return Exception("ISBN existed");
+
+            libISBN.erase(cur.ISBN,cur);
+            libISBN.insert(__B.ISBN,__B);
+        } else { // cur.ISBN == __B.ISBN
+            libISBN.modify(__B.ISBN,__B);
+        }
+
         if(optMap.test(2)) {
-            if(!cur.Author.empty()) libAuthor.erase(cur.Author,__I);
+            if(!cur.Author.empty()) libAuthor.erase(cur.Author,cur.ISBN);
             if(!__B.Author.empty()) libAuthor.insert(__B.Author,__B.ISBN);
         }
 
         if(optMap.test(3)){
-            if(!cur.Name.empty()) libBookName.erase(cur.Name,__I);
+            if(!cur.Name.empty()) libBookName.erase(cur.Name,cur.ISBN);
             if(!__B.Name.empty()) libBookName.insert(__B.Name,__B.ISBN);
         }
 
         if(optMap.test(4)) {
             Keyword_t key;
+
             if(!cur.Keyword.empty()) {
                 const char *str = cur.Keyword;
                 while(true) {
                     bool isEnd = !getKeyword((char *)key,str);
-                    libKeyword.erase(key,__I);
+                    libKeyword.erase(key,cur.ISBN);
                     if(isEnd) break;
                 }
             }
+
             if(!__B.Keyword.empty()) {
                 const char *str = __B.Keyword;
                 while(true) {
@@ -355,7 +356,7 @@ class BookSystem {
                 }
             }
         }
-        
+
         return No_Exception();
     }
 
