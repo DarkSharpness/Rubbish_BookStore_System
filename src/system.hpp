@@ -7,15 +7,10 @@
 #include "account.hpp"
 #include "blocklist.hpp"
 
-
 #include <vector>
 #include <map>
-#include <bits/stdc++.h>
-// #include <stack>
 
 namespace dark {
-
-
 
 class AccountSystem {
   private:
@@ -219,11 +214,7 @@ class BookSystem {
         libISBN     ("bin/b1.bin","bin/b2.bin"),
         libAuthor   ("bin/b3.bin","bin/b4.bin"),
         libBookName ("bin/b5.bin","bin/b6.bin"),
-        libKeyword  ("bin/b7.bin","bin/b8.bin") {
-        
-
-    }
-
+        libKeyword  ("bin/b7.bin","bin/b8.bin") {}
 
 
     /* Print the lib. */
@@ -371,10 +362,6 @@ class BookSystem {
     }
 
 };
-
-
-
-
 
 
 }
