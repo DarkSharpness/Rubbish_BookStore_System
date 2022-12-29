@@ -30,7 +30,7 @@ const std::map <std::string,Command_t> commandMap = {
 
 class commandManager {
   private:
-    #define MAXN 256
+    #define MAXN 512
     std::string input;       // Input buffer.
     std::string token[MAXN]; // Maximum string number.
     size_t count; // Count of tokens
@@ -276,6 +276,7 @@ class commandManager {
   private:
     /* Just Split the string and get command. */
     Command_t split(std::string &str) noexcept {
+        if(str.size() >= MAXN) return Command_t::unknown;
         count = 0;
         size_t i = 0;
         while(true) {
@@ -283,7 +284,7 @@ class commandManager {
             token[count].clear();
             if(!str[i]) break;
             while(str[i] != ' ' && str[i]) {token[count].push_back(str[i++]);}
-            ++count;
+            if(++count == MAXN) return Command_t::unknown;
             if(!str[i]) break;
         }
         auto iter = commandMap.find(token[0]);
