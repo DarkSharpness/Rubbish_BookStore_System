@@ -210,11 +210,14 @@ inline std::pair <bool,double> getMoney(const char *str) {
     return std::make_pair(is,is ? std::stod(str) : 0.0);
 }
 
+inline bool isValidLevel(const char *str) {
+    return (*str == '1' || *str == '3' || *str == '7') && !*(str + 1);
+}
+
 
 /* Get Priviledge from an str. */
-inline std::pair <bool,Level_t> getLevel(const char *str) {
-    return std::make_pair((*str == '1' || *str == '3' || *str == '7') 
-                       && !*(str + 1),Level_t(*str ^ '0'));
+inline Level_t getLevel(const char *str) {
+    return Level_t((*str) ^ '0');
 }
 
 /* Get one Keyword.False if no more keyword.

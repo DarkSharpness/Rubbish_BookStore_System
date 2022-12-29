@@ -107,13 +107,12 @@ class commandManager {
         if(count == 5) {
             if(!isValidUserID  (token[1].data())
             || !isValidPassword(token[2].data())
+            || !isValidLevel   (token[3].data())
             || !isValidUserName(token[4].data())) {
-                return Exception("Invalid AddUser UserID/PWD/UserName");
+                return Exception("Invalid AddUser UserID/PWD/Level/UserName");
             }
-            auto pair = getLevel(token[3].data());
-            if(!pair.first) {return Exception("Invalid Level Input");}
-            return Users.addUser(token[1].data(),token[2].data(),
-                                 pair.second,token[4].data());
+            Level_t L = getLevel(token[3].data());
+            return Users.addUser(token[1].data(),token[2].data(),L,token[4].data());
         } else {
             return Exception("Invalid AddUser Command Length");
         }
