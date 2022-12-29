@@ -136,7 +136,7 @@ class commandManager {
         }
 
         if(count == 1) {
-            return No_Exception();
+            // return No_Exception();
             return Library.showAll();
         } else if(count == 2) {
             char *str;
