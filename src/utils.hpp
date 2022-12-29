@@ -17,17 +17,6 @@ using Password_t = string <32>;
 using FileName_t = string <32>;
 using Keyword_t  = string <64>;
 
-
-// struct ISBN_t    : public string <24> {using string::string;using string::operator=(const char *);};
-// struct Author_t  : public string <64> {using string::string;using string::operator=(const char *);};
-// struct BookName_t: public string <64> {using string::string;using string::operator=(const char *);};
-// struct UserID_t  : public string <32> {using string::string;using string::operator=(const char *);};
-// struct UserName_t: public string <32> {using string::string;using string::operator=(const char *);};
-// struct Password_t: public string <32> {using string::string;using string::operator=(const char *);};
-// struct FileName_t: public string <32> {using string::string;using string::operator=(const char *);};
-// struct FileName_t: public string <32> {using string::string;using string::operator=(const char *);};
-// struct Keyword_t : public string <64> {using string::string;using string::operator=(const char *);};
-
 enum Level_t {
     Customer  = 1,
     Librarian = 3,
@@ -74,20 +63,21 @@ inline int Compare(const char *s1,const char *s2) {
 }
 
 
-/* Test whether it's a valid char  */
-inline bool isValidChar(char __c) {
-    return __c > 0 && __c < 128;
+/* Test whether it's a visible char  */
+inline bool isVisibleChar(char __c) {
+    return __c > 31 && __c < 127;
 }
+
 
 /* Test whether it's a UserID. */
 inline bool isValidUserID(const char *str) {
     size_t count = 0;
     while(*str) {
-        if(*str == '_'
-        || (*str >= 'a' && *str <= 'z')
-        || (*str >= 'A' && *str <= 'Z')
-        || isdigit(*str)
-        ) {++str,++count;continue;}
+        if(*str == '_'   || (*str >= 'a' && *str <= 'z')
+        || isdigit(*str) || (*str >= 'A' && *str <= 'Z')) {
+            ++str,++count;
+            continue;
+        }
         return false;
     }
     return count <= 30 && count;
@@ -103,7 +93,7 @@ inline bool isValidPassword(const char *str) {
 inline bool isValidUserName(const char *str) {
     size_t count = 0;
     while(*str) {
-        if(*str >= 32 && *str <= 127) {++str,++count;continue;}
+        if(isVisibleChar(*str)) {++str,++count;continue;}
         return false;
     }
     return count <= 30 && count;
@@ -113,7 +103,7 @@ inline bool isValidUserName(const char *str) {
 inline bool isValidISBN(const char *str) {
     size_t count = 0;
     while(*str) {
-        if(*str >= 32 && *str <= 127) {++str,++count;continue;}
+        if(isVisibleChar(*str)) {++str,++count;continue;}
         return false;
     }
     return count <= 20 && count;
@@ -123,7 +113,7 @@ inline bool isValidISBN(const char *str) {
 inline bool isValidBookName(const char *str) {
     int count = 0;
     while(*str) {
-        if(*str >= 32 && *str <= 127 && *str != '\"') {++str,++count;continue;}
+        if(isVisibleChar(*str) && *str != '\"') {++str,++count;continue;}
         return false;
     }
     return count <= 60 && count;
@@ -145,7 +135,7 @@ inline bool isValidKeyword(const char *str) {
             ++str;
             continue;
         }
-        if(*str >= 32 && *str <= 127 && *str != '\"') {
+        if(isVisibleChar(*str) && *str != '\"') {
             ++str,++count,++length;
             continue;
         }
@@ -158,7 +148,7 @@ inline bool isValidKeyword(const char *str) {
 inline bool isValidOneKeyword(const char *str) {
     int count = 0;
     while(*str) {
-        if(*str >= 32 && *str <= 127 && *str != '\"' && *str != '|') {
+        if(isVisibleChar(*str) && *str != '\"' && *str != '|') {
             ++str,++count;
             continue;
         }
@@ -169,9 +159,10 @@ inline bool isValidOneKeyword(const char *str) {
 
 /* Get quantity from a char string */
 inline std::pair <bool,size_t> getQuantity(const char *str) {
-    if(*str == '0') {
+    if(*str == '0') { // No 0 case is allowed.
         return std::make_pair(false,0ULL);
     }
+
     int count = 0;
     size_t quantity = 0;
     while(*str) {
@@ -179,18 +170,21 @@ inline std::pair <bool,size_t> getQuantity(const char *str) {
         quantity = quantity * 10 + (*str ^ '0'); 
         ++str,++count;
     }
-    return std::make_pair(quantity < 2147483647ULL && quantity && count <= 10 && count,
+
+    return std::make_pair(quantity < 2147483647ULL && count <= 10 && count,
                           quantity);
 }
 
 /* Test whether a char is money type. */
-inline bool isMoney(const char *str) {
+inline bool isValidMoney(const char *str) {
     int count1 = 0; // Digit number.
     int count2 = 0; // Digit number after dot.
     bool dot = false;  // Whether there is dot.
+
     if(*str == '.' || (*str == '0' && *(str + 1) != '.' && *(str + 1))) {
         return false; // if 0 then 0 or 0.0 or 0.00
     }
+
     while(*str) {
         ++count1;
         if(*str == '.' && !dot) {
@@ -206,7 +200,7 @@ inline bool isMoney(const char *str) {
 
 /* Get money from a char string */
 inline std::pair <bool,double> getMoney(const char *str) {
-    bool is = isMoney(str);
+    bool is = isValidMoney(str);
     return std::make_pair(is,is ? std::stod(str) : 0.0);
 }
 
@@ -279,7 +273,7 @@ inline regex_t getType(char *str,char *&ans) {
     } else if(checkPrefix(str,"-price=")) {
         str += 7;
         ans = str;
-        if(isMoney(ans)) return regex_t::showPrice;
+        if(isValidMoney(ans)) return regex_t::showPrice;
         else             return regex_t::showError;      
     }
     return regex_t::showError;
