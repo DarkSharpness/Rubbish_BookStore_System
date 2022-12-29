@@ -185,8 +185,11 @@ class commandManager {
             || !isValidISBN(token[1].data())) {
                 return Exception("Invalid");
             } else {
-                return Users.select(token[1].data());
-                Library.select(token[1].data());
+                Exception result = Users.select(token[1].data());
+                if(!result.test()) {
+                    Library.select(token[1].data());
+                }
+                return result;
             }
         } else {
             return Exception("Invalid Select Command Length");
