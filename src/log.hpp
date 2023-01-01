@@ -98,15 +98,20 @@ class LogWriter : private File {
 
     /* Show the inner log. */
     void showLog() {
+        std::cout << "---------------------------------------\n";
+        std::cout << "The following part is about action of Users:\n";
         writeFile(logInfo);
 
         size_t count;
         seekg(0);
         read(count);
+        std::cout << "---------------------------------------\n";
         std::cout << "The following part is about finance:\n"
-                  << "Count of trades:" << count << '\n';
+                  << (count > 1 ? "Count of trades:" : "Count of trade:")
+                  << count << '\n';
 
         writeFile(tradeInfo);
+        std::cout << "---------------------------------------\n";
     }
 
     /* Write income and outcome. */
