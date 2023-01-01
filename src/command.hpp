@@ -1,41 +1,12 @@
 #ifndef _COMMAND_H_
 #define _COMMAND_H_
 
+#include "utils.hpp"
 #include "system.hpp"
 #include "log.hpp"
-#include <map>
 #include <bitset>
 
 namespace dark {
-
-/* Record command. */
-const std::map <std::string,Command_t> commandMap = {
-    {"exit",Command_t::exit},
-    {"quit",Command_t::exit},
-    {"su",Command_t::login},
-    {"logout",Command_t::logout},
-    {"register",Command_t::reg},
-    {"passwd",Command_t::passwd},
-    {"useradd",Command_t::userad},
-    {"delete",Command_t::remove},
-    {"show",Command_t::show},
-    {"buy",Command_t::buy},
-    {"select",Command_t::select},
-    {"modify",Command_t::modify},
-    {"import",Command_t::import},
-    {"finance",Command_t::show_f},
-    {"log",Command_t::log}
-};
-
-
-const std::string levelMap[] = {
-    "","Customer","","Librarian",
-    "","","","Manager"
-};
-
-const std::string regMap[] = {
-    "","$ISBN$","$Author$","$BookName$","$Keyword$","$Price$"
-};
 
 
 class commandManager {
@@ -211,15 +182,15 @@ class commandManager {
                 case regex_t::showBookName: result = Library.showBookName(str);break;
                 case regex_t::showKeyword:
                     result =
-                    !isValidOneKeyword(str) ? // One keyword only
-                        Exception("Too many Keywords") : 
+                        !isValidOneKeyword(str) ? // One keyword only
+                        Exception("Too many Keywords") :
                         Library.showKeyword(str);
                     break;
                 default: return Exception("Invalid Regex Command");
             }
             if(!result.test()) {
                 Hastin.writeLog(Users.currentUser(),
-                                " showed all the books with",
+                                " showed all the books with ",
                                 regMap[opt],": \"",str,"\".");
             }
             return result;
@@ -247,9 +218,9 @@ class commandManager {
                           << Library.tradeMoney << '\n';
                 Hastin.writeTrade(Users.currentUser(),
                                   " bought ",token[2],
-                                  pair1.second == 1 ? " book" : " books",
+                                  pair1.second == 1 ? " book " : " books ",
                                   "costing ",
-                                  std::to_string(Library.tradeMoney),
+                                  doubleToString(Library.tradeMoney),
                                   '.'
                                 );
             }
@@ -344,7 +315,7 @@ class commandManager {
             }
             if(optMap.test(5)) {
                 info += "new $Price$: \"";
-                info += std::to_string(tmp.cost);
+                info += doubleToString(tmp.cost);
                 info += "\",";
             }
             info.back() = '.';
@@ -376,7 +347,7 @@ class commandManager {
                 Hastin.writeTrade(Users.currentUser(),
                                   " imported ",token[1],
                                   pair1.second == 1 ? " book " : " books ",
-                                  "costing ",token[2]," in all.");
+                                  "costing ",doubleToString(pair1.second)," in all.");
             }
             return result;
         } else {

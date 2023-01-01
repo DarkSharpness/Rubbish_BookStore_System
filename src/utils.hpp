@@ -5,8 +5,11 @@
 #include "string.hpp"
 #include "exception.hpp"
 #include <vector>
+#include <map>
 
 namespace dark {
+
+
 
 using ISBN_t     = string <24>;
 using Author_t   = string <64>;
@@ -49,6 +52,39 @@ enum regex_t {
     showPrice    = 5,
     showError    = 0
 };
+
+
+/* Record command. */
+const std::map <std::string,Command_t> commandMap = {
+    {"exit",Command_t::exit},
+    {"quit",Command_t::exit},
+    {"su",Command_t::login},
+    {"logout",Command_t::logout},
+    {"register",Command_t::reg},
+    {"passwd",Command_t::passwd},
+    {"useradd",Command_t::userad},
+    {"delete",Command_t::remove},
+    {"show",Command_t::show},
+    {"buy",Command_t::buy},
+    {"select",Command_t::select},
+    {"modify",Command_t::modify},
+    {"import",Command_t::import},
+    {"finance",Command_t::show_f},
+    {"log",Command_t::log}
+};
+
+/* Level-String Map */
+const std::string levelMap[] = {
+    "","Customer","","Librarian",
+    "","","","Manager"
+};
+
+/* Regex-String Map */
+const std::string regMap[] = {
+    "","$ISBN$","$Author$","$BookName$","$Keyword$","$Price$"
+};
+
+
 
 /* Standard compare function for any type. */
 template <class T>
@@ -279,7 +315,7 @@ inline regex_t getType(char *str,char *&ans) {
     return regex_t::showError;
 }
 
-
+/* Check whether there is repeated Keyword */
 inline bool checkRepeatKeyword(const char *str) {
     std::vector <Keyword_t> keys;
     while(true) {
@@ -290,6 +326,15 @@ inline bool checkRepeatKeyword(const char *str) {
         if(isEnd) break;
     }
     return true;
+}
+
+/* Force to change a double object into standard output string  */
+std::string doubleToString(double num) {
+    size_t output = num * 100 + 0.5;
+    return std::to_string(output / 100) 
+        + '.'
+        + char((output % 100 / 10) ^ '0')
+        + char((output % 10) ^ '0');
 }
 
 

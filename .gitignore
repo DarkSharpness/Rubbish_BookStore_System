@@ -1,4 +1,4 @@
-bookstore-testcases/
+testcases/
 *.exe
 build/
 .cache/
