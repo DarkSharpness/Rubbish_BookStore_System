@@ -218,11 +218,11 @@ class commandManager {
                           << Library.tradeMoney << '\n';
                 Hastin.writeTrade(Users.currentUser(),
                                   " bought ",token[2],
-                                  pair1.second == 1 ? " book " : " books ",
-                                  "costing ",
+                                  pair1.second == 1 ? " book" : " books",
+                                  " with $ISBN$: \"",token[1],
+                                  "\",costing ",
                                   doubleToString(Library.tradeMoney),
-                                  '.'
-                                );
+                                  " in all.");
             }
             return result;
         } else {
@@ -240,7 +240,7 @@ class commandManager {
                 if(!result.test()) {
                     Library.select(token[1].data());
                     Hastin.writeLog(Users.currentUser(),
-                                    " selected a book with $ISBN$: \"",
+                                    " selected the book with $ISBN$: \"",
                                     token[1],"\".");
                 }
                 return result;
@@ -322,7 +322,7 @@ class commandManager {
 
             Hastin.writeLog(Users.currentUser(),
                             " changed the Book $ISBN$: \"",(const char *)(*Iptr),
-                            "\" into a Book with: ",
+                            "\" into the new Book with: ",
                             info);
 
 
@@ -346,8 +346,11 @@ class commandManager {
                 Hastin.add(0,pair2.second);
                 Hastin.writeTrade(Users.currentUser(),
                                   " imported ",token[1],
-                                  pair1.second == 1 ? " book " : " books ",
-                                  "costing ",doubleToString(pair1.second)," in all.");
+                                  pair1.second == 1 ? " book" : " books",
+                                  " with $ISBN$: \"",(const char *)(*Iptr),
+                                  "\",costing ",
+                                  doubleToString(pair1.second),
+                                  " in all.");
             }
             return result;
         } else {
