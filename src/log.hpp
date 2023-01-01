@@ -21,6 +21,11 @@ class LogWriter : private File {
         buffer += msg;
     }
 
+    /* Write a cstring into buffer. */
+    void writeInfo(const std::string &msg) {
+        buffer += msg;
+    }
+
     /* Write a char into buffer. */
     void writeInfo(char __ch) {
         buffer += __ch;
@@ -28,16 +33,23 @@ class LogWriter : private File {
 
     /* Clear the buffer and write the info by __F. */
     void writeInfo(File &__F) {
-        buffer += '\n';
         __F.write(buffer.front(),buffer.size());
+    }
+
+    /* End of expansion with a new line.*/
+    void writeLog() {
+        buffer += '\n';
+        writeInfo(logInfo);
         buffer.clear();
     }
 
     /* End of expansion with a new line.*/
-    void writeLog() {return writeInfo(logInfo);}
-
-    /* End of expansion with a new line.*/
-    void writeTrade() {return writeInfo(tradeInfo);}
+    void writeTrade() {
+        buffer += '\n';
+        writeInfo(tradeInfo);
+        writeInfo(logInfo);
+        buffer.clear();
+    }
 
     /* Write infos in the File. */
     void writeFile(File &__F) {
@@ -72,7 +84,6 @@ class LogWriter : private File {
     template <class T,class ...V>
     void writeLog(const T &msg,const V &...msgs) {
         writeInfo(msg);
-        writeInfo(' ');
         return writeLog(msgs...);
     }
 
@@ -81,7 +92,6 @@ class LogWriter : private File {
     template <class T,class ...V>
     void writeTrade(const T &msg,const V &...msgs) {
         writeInfo(msg);
-        writeInfo(' ');
         return writeTrade(msgs...);
     }
 

@@ -28,6 +28,16 @@ const std::map <std::string,Command_t> commandMap = {
 };
 
 
+const std::string levelMap[] = {
+    "","Customer","","Librarian",
+    "","","","Manager"
+};
+
+const std::string regMap[] = {
+    "","$ISBN$","$Author$","$BookName$","$Keyword$","$Price$"
+};
+
+
 class commandManager {
   private:
     #define MAXN 512
@@ -43,13 +53,21 @@ class commandManager {
             if(!isValidUserID(token[1].data())) {
                 return Exception("Invalid Login User ID");
             }
-            return Users.login(token[1].data());
+            Exception result = Users.login(token[1].data());
+            if(!result.test()) {
+                Hastin.writeLog("$User$: \"",token[1],"\" logged in.");
+            }
+            return result;
         } else if(count == 3) {
             if(!isValidUserID  (token[1].data()) 
             || !isValidPassword(token[2].data())) {
                 return Exception("Invalid Login UserID or Invalid Login PWD");
             }
-            return Users.login(token[1].data(),token[2].data());
+            Exception result = Users.login(token[1].data(),token[2].data());
+            if(!result.test()) {
+                Hastin.writeLog("$User$: \"",token[1],"\" logged in.");
+            }
+            return result;
         } else {
             return Exception("Invalid Login Command Length");
         }
@@ -57,7 +75,11 @@ class commandManager {
 
     Exception logout() {
         if(count == 1) {
-            return Users.logout();
+            Exception result = Users.logout();
+            if(!result.test()) {
+                Hastin.writeLog("$User$: \"",Users.tmpString,"\" logged out.");
+            }
+            return result;
         } else {
             return Exception("Invalid Logout Command Length");
         }
@@ -70,9 +92,16 @@ class commandManager {
             || !isValidUserName(token[3].data())) {
                 return Exception("Invalid Register UserID/PWD/Name");
             } else {
-                return Users.registering(token[1].data(),
-                                         token[2].data(),
-                                         token[3].data());
+                Exception result =  Users.registering(token[1].data(),
+                                                      token[2].data(),
+                                                      token[3].data());
+                if(!result.test()) {
+                    Hastin.writeLog(Users.currentUser(),
+                                    " registered a new account: \"",token[1],
+                                    "\" with $Password$: \"",token[2],
+                                    "\" and $UserName$: \"",token[3],"\".");   
+                }
+                return result;
             }
         } else {
             return Exception("Invalid Register Command Length");
@@ -85,8 +114,15 @@ class commandManager {
             || !isValidPassword(token[2].data())) {
                 return Exception("Invalid ChangePWD UserID/PWD");
             } else {
-                return Users.changePassword(token[1].data(),
-                                            token[2].data());
+                Exception result = Users.changePassword(token[1].data(),
+                                                        token[2].data());
+                if(!result.test()) {
+                    Hastin.writeLog(Users.currentUser(),
+                                    " changed the $Password$ of $User$: \"",token[1],
+                                    "\" from \"",Users.tmpString,
+                                    "\" into \"",token[2],"\".");
+                }
+                return result;
             }
         } else if(count == 4) {
             if(!isValidUserID  (token[1].data())
@@ -94,9 +130,16 @@ class commandManager {
             || !isValidPassword(token[3].data())) {
                 return Exception("Invalid ChangePWD UserID/PWD");
             } else {
-                return Users.changePassword(token[1].data(),
-                                            token[2].data(),
-                                            token[3].data());
+                Exception result = Users.changePassword(token[1].data(),
+                                                        token[2].data(),
+                                                        token[3].data());
+                if(!result.test()) {
+                    Hastin.writeLog(Users.currentUser(),
+                                    " changed the $Password$ of $User$: \"",token[1],
+                                    "\" from \"",token[2],
+                                    "\" into \"",token[3],"\".");
+                }
+                return result;
             }
         } else {
             return Exception("Invalid ChangePWD Command Length");
@@ -112,7 +155,17 @@ class commandManager {
                 return Exception("Invalid AddUser UserID/PWD/Level/UserName");
             }
             Level_t L = getLevel(token[3].data());
-            return Users.addUser(token[1].data(),token[2].data(),L,token[4].data());
+            std::string lastCurrent = Users.currentUser();
+            Exception result = Users.addUser(token[1].data(),token[2].data(),
+                                           L,token[4].data());
+            if(!result.test()) {
+                Hastin.writeLog(lastCurrent,
+                                " add a new $User$: \"",token[1],
+                                "\" with $Password$: \"",token[2],
+                                "\",$Level$: ",levelMap[L],
+                                " and $UserName$: \"",token[4],"\".");
+            }
+            return result;
         } else {
             return Exception("Invalid AddUser Command Length");
         }
@@ -123,7 +176,12 @@ class commandManager {
             if(!isValidUserID(token[1].data())) {
                 return Exception("Invalid ID");
             } else {
-                return Users.removeUser(token[1].data());
+                Exception result = Users.removeUser(token[1].data());
+                if(!result.test()) {
+                    Hastin.writeLog(Users.currentUser(),
+                                    " removed a $User$: \"",token[1],"\".");
+                }
+                return result;
             }
         } else {
             return Exception("Invalid Remove Command");
@@ -137,20 +195,34 @@ class commandManager {
 
         if(count == 1) {
             // return No_Exception();
-            return Library.showAll();
+            Exception result = Library.showAll();
+            if(!result.test()) {
+                Hastin.writeLog(Users.currentUser(),
+                                " showed all the books.");
+            }
+            return result;
         } else if(count == 2) {
             char *str;
             regex_t opt = getType(token[1].data(),str);
+            Exception result;
             switch(opt) {
-                case regex_t::showISBN:    return Library.showISBN(str);  
-                case regex_t::showAuthor:  return Library.showAuthor(str);
-                case regex_t::showBookName:return Library.showBookName(str);
+                case regex_t::showISBN:     result = Library.showISBN(str);break;  
+                case regex_t::showAuthor:   result = Library.showAuthor(str);break;
+                case regex_t::showBookName: result = Library.showBookName(str);break;
                 case regex_t::showKeyword:
-                    if(!isValidOneKeyword(str)) // One keyword only
-                         return Exception("Too many Keywords");
-                    else return Library.showKeyword(str);
+                    result =
+                    !isValidOneKeyword(str) ? // One keyword only
+                        Exception("Too many Keywords") : 
+                        Library.showKeyword(str);
+                    break;
                 default: return Exception("Invalid Regex Command");
             }
+            if(!result.test()) {
+                Hastin.writeLog(Users.currentUser(),
+                                " showed all the books with",
+                                regMap[opt],": \"",str,"\".");
+            }
+            return result;
         } else {
             return Exception("Invalid Show Command Length");
         }
@@ -173,6 +245,13 @@ class commandManager {
                 Hastin.add(Library.tradeMoney,0);
                 std::cout << std::fixed << std::setprecision(2)
                           << Library.tradeMoney << '\n';
+                Hastin.writeTrade(Users.currentUser(),
+                                  " bought ",token[2],
+                                  pair1.second == 1 ? " book" : " books",
+                                  "costing ",
+                                  std::to_string(Library.tradeMoney),
+                                  '.'
+                                );
             }
             return result;
         } else {
@@ -189,6 +268,9 @@ class commandManager {
                 Exception result = Users.select(token[1].data());
                 if(!result.test()) {
                     Library.select(token[1].data());
+                    Hastin.writeLog(Users.currentUser(),
+                                    " selected a book with $ISBN$: \"",
+                                    token[1],"\".");
                 }
                 return result;
             }
@@ -238,9 +320,45 @@ class commandManager {
 
         Exception result = Library.modify(tmp,optMap);
 
-        if(!result.test() && optMap.test(1)) {
-            Users.modifyISBN(*Iptr,tmp.ISBN);
+        if(!result.test()) {
+            std::string info;
+            if(optMap.test(1)) {
+                info += "new $ISBN$: \"";
+                info += (const char*)tmp.ISBN;
+                info += "\",";
+            }
+            if(optMap.test(2)) {
+                info += "new $Author$: \"";
+                info += (const char *)tmp.Author;
+                info += "\",";
+            }
+            if(optMap.test(3)) {
+                info += "new $BookName$: \"";
+                info += (const char *)tmp.Name;
+                info += "\",";
+            }
+            if(optMap.test(4)) {
+                info += "new $Keyword$: \"";
+                info += (const char *)tmp.Keyword;
+                info += "\",";
+            }
+            if(optMap.test(5)) {
+                info += "new $Price$: \"";
+                info += std::to_string(tmp.cost);
+                info += "\",";
+            }
+            info.back() = '.';
+
+            Hastin.writeLog(Users.currentUser(),
+                            " changed the Book $ISBN$: \"",(const char *)(*Iptr),
+                            "\" into a Book with: ",
+                            info);
+
+
+            if(optMap.test(1)) Users.modifyISBN(*Iptr,tmp.ISBN);
         }
+
+
 
         return result;
     }
@@ -255,6 +373,10 @@ class commandManager {
             Exception result = Library.import(*Iptr,pair1.second);
             if(!result.test()) {
                 Hastin.add(0,pair2.second);
+                Hastin.writeTrade(Users.currentUser(),
+                                  " imported ",token[1],
+                                  pair1.second == 1 ? " book " : " books ",
+                                  "costing ",token[2]," in all.");
             }
             return result;
         } else {
@@ -263,7 +385,11 @@ class commandManager {
     }
 
     Exception showLog() {
-        return Exception("Not Implemented Yet U Silly");
+        if(!Users.checkLevel(Level_t::Manager)) {
+            return Exception("Not Enough Level to show log");
+        }
+        Hastin.showLog();
+        return No_Exception();
     }
 
 
@@ -277,7 +403,11 @@ class commandManager {
                 return Exception("Not enough Level to show Finance");
             auto pair = getQuantity(token[2].data());
             if(!pair.first && token[2] != "0") return Exception("Invalid Count");
-            return Hastin.query(pair.second);
+            Exception result = Hastin.query(pair.second);
+            if(!result.test()) {
+                Hastin.writeLog(Users.currentUser()," showed finance.");
+            }
+            return result;
         } else {
             return Exception("Invalid Show Finance Command Length");
         }

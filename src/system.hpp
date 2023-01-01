@@ -33,8 +33,15 @@ class AccountSystem {
     Account Account_cache1;
     friend class commandManager;
 
+    std::string tmpString;
 
   public:
+    /* Return current user's ID with "$User$"*/
+    inline std::string currentUser() const {
+        return stack.empty() ? "Somebody not logged in" : 
+                               std::string("$User$: \"") + (const char *)stack.back().ID 
+                                                       + '\"';
+    }
 
     /* Check the current level standard. */
     inline bool checkLevel(int __MIN) const noexcept {
@@ -100,7 +107,10 @@ class AccountSystem {
 
         auto iter = instack.find(stack.back().ID);
         stack.pop_back();
-        if(!--iter->second) instack.erase(iter);
+        if(!--iter->second) {
+            tmpString = (const char *)iter->first;
+            instack.erase(iter);
+        }
         return No_Exception();
     }
 
@@ -139,7 +149,8 @@ class AccountSystem {
 
 
         if(!library.modify_if(__ID,
-                            [&](Account &__A)->bool { 
+                            [&](Account &__A)->bool {
+                                tmpString    = (const char *)__A.Password; 
                                 __A.Password = __NEW;
                                 return true;
                             })) {
