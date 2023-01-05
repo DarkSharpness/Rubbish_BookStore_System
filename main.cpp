@@ -1,3 +1,4 @@
+// #define DARK_ERROR true
 #include "src/command.hpp"
 #include <filesystem>
 

@@ -362,8 +362,7 @@ class commandManager {
         if(!Users.checkLevel(Level_t::Manager)) {
             return Exception("Not Enough Level to show log");
         }
-        Hastin.showLog();
-        return No_Exception();
+        return Hastin.showLog();
     }
 
 
@@ -386,7 +385,14 @@ class commandManager {
             return Exception("Invalid Show Finance Command Length");
         }
     }
-
+    Exception quit() noexcept {
+        Hastin.writeLog(Users.currentUser()," shutdown this program.");
+        for(auto it = Users.stack.rbegin() ; it != Users.stack.rend() ; ++it) {
+            Hastin.writeLog((const char *)it->ID,"logged out.");
+        }
+        Hastin.writeLog("$System$: See you next time!");
+        return Exit_Exception();
+    }
   private:
     /* Just Split the string and get command. */
     Command_t split(std::string &str) noexcept {
@@ -412,13 +418,19 @@ class commandManager {
             return iter->second;
         }
     }
-    Exception run() {
+
+  public:
+    ~commandManager() = default;
+    commandManager()  = default;
+
+    /* Exception will be dealt within this function. */
+    Exception runCommand() {
         std::getline(std::cin,input);
         if(!std::cin)  return Exit_Exception();
         Command_t opt = split(input);
         if(count == 0) return No_Exception(); // Space only/
         switch(opt) {
-            case Command_t::exit:   return Exit_Exception();
+            case Command_t::exit:   return quit();
             case Command_t::login:  return login();
             case Command_t::logout: return logout();
             case Command_t::reg:    return reg();
@@ -434,20 +446,6 @@ class commandManager {
             case Command_t::show_f: return showFinance();
             default: return Exception("Unknown Command");
         }
-    }
-
-  public:
-    ~commandManager() = default;
-    commandManager() {
-    }
-    /* Exception will be dealt within this function. */
-    
-    bool runCommand() noexcept {
-        Exception ans = run();
-        if(ans.test()) { /* Write Log. */
-
-        }
-        return ans; /* Here , Exception will be dealt */
     }
 };
 

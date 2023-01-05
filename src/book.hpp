@@ -31,7 +31,7 @@ struct Book {
     }
 
     /* Compare by all equal. */
-    int Compare(const Book &rhs) const{
+    friend int Compare(const Book &lhs,const Book &rhs) {
         return 0;
     }
 

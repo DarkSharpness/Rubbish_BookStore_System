@@ -97,7 +97,7 @@ class LogWriter : private File {
 
 
     /* Show the inner log. */
-    void showLog() {
+    Exception showLog() noexcept {
         std::cout << "---------------------------------------\n";
         std::cout << "The following part is about action of Users:\n";
         writeFile(logInfo);
@@ -112,6 +112,7 @@ class LogWriter : private File {
 
         writeFile(tradeInfo);
         std::cout << "---------------------------------------\n";
+        return No_Exception();
     }
 
     /* Write income and outcome. */
@@ -178,9 +179,7 @@ class LogWriter : private File {
         return No_Exception();
     }
 
-
 };
-
 
 }
 

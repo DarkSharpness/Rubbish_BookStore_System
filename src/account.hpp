@@ -7,11 +7,11 @@ namespace dark {
 
 /* Custom account without userID. */
 struct Account {
+  public:
     UserName_t Name;     // User Name
     Password_t Password; // Password of the Account
     Level_t    Level;    // Priority Level
 
-    friend class AccountSystem;
 
     /* Init an account with Name,Password and Level  */
     void init(const char * __N,const char *__P,Level_t __L) {

@@ -35,25 +35,6 @@ class AccountSystem {
 
     std::string tmpString;
 
-  public:
-    /* Return current user's ID with "$User$"*/
-    inline std::string currentUser() const {
-        return stack.empty() ? "Somebody not logged in" : 
-                               std::string("$User$: \"") + (const char *)stack.back().ID 
-                                                       + '\"';
-    }
-
-    /* Check the current level standard. */
-    inline bool checkLevel(int __MIN) const noexcept {
-        return (!stack.empty()) && stack.back().Level >= __MIN;
-    }
-
-    /* Get the iterator to selected ISBN */
-    inline ISBN_t *selected() noexcept {
-        if(stack.empty() || stack.back().ISBN.empty()) return nullptr;
-        else return &stack.back().ISBN;
-    }
-
     /* Tries to find the User according to __ID.
        Store the data in arr as the return value. */
     bool getUser(const UserID_t &__ID) {
@@ -67,6 +48,8 @@ class AccountSystem {
         return true;
     }
 
+  public:
+    
     /* Just clear the user stack. */
     ~AccountSystem() = default;
 
@@ -117,7 +100,7 @@ class AccountSystem {
     /* Register an account. */
     Exception registering(const UserID_t   &__ID,
                           const Password_t &__PWD,
-                          const UserName_t &__Name){
+                          const UserName_t &__Name) {
         Account &__tmp = Account_cache1; 
         __tmp.init(__Name,__PWD,Level_t::Customer);
 
@@ -198,7 +181,23 @@ class AccountSystem {
         }
     }
 
+    /* Return current user's ID with "$User$"*/
+    inline std::string currentUser() const {
+        return stack.empty() ? "$Somebody not logged in$" : 
+                               std::string("$User$: \"") + (const char *)stack.back().ID 
+                                                       + '\"';
+    }
 
+    /* Check the current level standard. */
+    inline bool checkLevel(int __MIN) const noexcept {
+        return (!stack.empty()) && stack.back().Level >= __MIN;
+    }
+
+    /* Get the iterator to selected ISBN */
+    inline ISBN_t *selected() noexcept {
+        if(stack.empty() || stack.back().ISBN.empty()) return nullptr;
+        else return &stack.back().ISBN;
+    }
 };
 
 

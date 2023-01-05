@@ -2,480 +2,366 @@
 
 ## Author : DarkSharpness
 
-## !!! The following parts have not been completely implemented yet!
+---
 
+### Code Standard
 
-***
-### Standard
+Most of the code will obey the following rules.
+
+```C++
+
+class Myclass; // Exception : string
+class MySystem;
 
 #define CONSTANT
-MyClass variableName
-void functionName.
+MyClass  variableName;
+MySystem System;
+void functionName;
 
+```
 
+What's more,all source codes are in header-only files, which means you can directly use it by simply include hpp file(s).
 
 ### Structure:
 
-1. ReadCommand by commandManager.
-2. CommandManager analyze the input command and therefore perform it.
-
-a. Book Command.
-
-Check with AccountSystem First. Then turn to BookSystem.
-
-b. User Command.
-
-Turn to AccountSystem.
-
-c. Log Command and others.(Not Much)
-
-Do it within the commandManager.
-
-
+1. Read a line of command by commandManager.
+2. CommandManager analyzes the input command and therefore perform it.
+    1. Book Command: Check with AccountSystem with Level or book selected first. Then turn to BookSystem. Use logWriter
+    2. User Command: Turn to AccountSystem directly.
+    3. Log Command: Turn to Logwriter directly.
+3. CommandManager returns an Exception class. When the Exception object is forced to change into bool, it will first print out the Exception message inside(if exception did happen). In this way, I avoid the costly process of throw and try catch in C++.
 
 ### Class Info & Function(with comments):
 
-String: Custom string storing information.
+string: Custom string storing information.
 
 ```C++
-template <int len>
+template <size_t len>
 class string {
   private:
     char str[len];
-
   public:
+    /* Basic construction functions. */
 
-    /* Basic functions. */
-
-
-    /* Initialize by nothing. */
     string() {}
-    /* Initialize as empty. */
-    string(std::nullptr_t) {memset(str,0,sizeof(str));}
-    /* Initialize by another cstr. */
-    string(const char *ptr) {strcpy(str,ptr);}
-    /* Nothing to do. */
-    ~string() = default;
+    string(std::nullptr_t);
+    string(const char *ptr);
 
-    /* Basic copy from another string. */
-    string &operator =(const string &rhs) {
-        if(this == &rhs) return *this;
-        memcpy(str,rhs.str,sizeof(rhs));
-        return *this;
-    }
-    /* Judge Whether a string is empty */
-    bool operator !(void) const{return str[0];}
-    /* Basic copy from another cstr. */
-    string &operator =(const char *ptr) {
-        memset(str,0,sizeof(str));
-        strcpy(str,ptr);
-        return *this;
-    }
+    /* Basic copy functions. */
 
-    /* Force to change into a cstr. */
-    operator const char *() const{
-        return str;
-    }
+    string &operator =(const string &rhs);
+    string &operator =(const char *rhs);
+
+    /* Type-related functions. */
+
+    bool operator !(void) const;
+    bool empty() const;
+    operator const char *() const;
+    explicit operator char *();
 
     /* Reference to data. */
 
-    inline char &operator [](int _pos)      {return str[_pos];}
-    inline char  operator [](int _pos) const{return str[_pos];}
+    inline char &operator [](size_t __pos);
+    inline char  operator [](size_t __pos) const;
 
-    /* Pointers as Iterators */
+    /* Compare functions*/
 
-    inline char *begin()             {return str;}
-    inline const char *begin()  const{return str;}
-    inline const char *cbegin() const{return str;}
-    inline char *end()             {return str + len;}
-    inline const char *end()  const{return str + len;}
-    inline const char *cend() const{return str + len;}
+    inline bool operator <(const string &rhs) const;
+    inline bool operator ==(const char *rhs) const;
+    inline bool operator !=(const char *rhs) const;
+    friend int Compare(const string &lhs,const string &rhs);
 
-    /* Compare Functions*/
-
-    template <int _len>
-    inline bool operator <(const string<_len> &rhs) const{return strcmp(str,rhs) < 0;}
+    /* IO functions. */
   
-  
-    template <int _len>
-    friend int Compare(const string &lhs,const string<_len> &rhs) {
-        return strcmp(lhs,rhs);
-    }
-
-    /* Output by ostream. */
-
-    friend std::ostream &operator <<(std::ostream &os,const string &tmp) {
-        return os << tmp.str;
-    }
+    friend std::istream &operator >>(std::istream &is,string &tmp);
+    friend std::ostream &operator <<(std::ostream &os,const string &tmp);
 
 };
+```
+
+Exception: Custom Exception class.(With some easy-to-use functions.)
+
+```C++
+class Exception {
+  private:
+    size_t isException; /* 1:Error || 0:Normal | -1 Exit */
+    static std::string message; /* Only one Exception at once. */
+  public:
+    explicit Exception();
+    explicit Exception(bool type);
+    Exception(const char *__m);
+    Exception(std::string &&__m);
+    Exception(const std::string &__m);
+    std::string &what() const;
+    bool test() const;
+    operator bool() const;
+};
+std::string Exception::message = "Invalid";
+
+inline Exception No_Exception();   /* No Exception Case. */
+inline Exception Exit_Exception(); /* Exit Case.*/
 ```
 
 File: Manage file inout operation.
 
 ```C++
-/* Custom File manager. */
-template <class T,int BIAS,size_t unit = sizeof(T)>
 class File : public std::fstream {
+  private:
     FileName_t name;
-
   public:
     File() = delete;
-    File(const char *_name) : name(_name) {}
-    File(const FileName_t &_name) : name(_name) {}
-    ~File() {}
+    File(const char *_name): name(_name) {}
+    ~File() = default;
 
-    /* Locate read position. */
-    void locateI(int __n) {
-        seekg(BIAS + __n * unit);
-    }
+    /* Try creating a new file.
+       0 if success || 1 if existed.  */
+    bool create();
 
-    /* Locate write position. */
-    void locateO(int __n) {
-        seekp(BIAS + __n * unit);
-    }
-
-
-    /* Open a new file and change to write/read mode. 
-       True  if succesfully created. 
-       False if already existed.*/
-    bool create() {
-        open();
-        if(good() && peek() != EOF) return true;
-        close(); // close first
-        open(std::ios::out);
-        close();
-        open();
-        return true;
-    }
-
-    /* Open the given File in binary mode(default). */
-    void open(std::ios_base::openmode __mode = (std::ios_base::openmode)28) {
-        this->std::fstream::open(name,__mode);
-    }
-
-    /* Just read one of any type.*/
-    template <class _T>
-    void read(_T *ptr) {
-        this->std::fstream::read(reinterpret_cast <char *>(ptr),sizeof(_T));
-    }
-
-    /* Just write one object of any type.*/
-    template <class _T>
-    void write(const _T &val,size_t siz = sizeof(_T)) {
-        this->std::fstream::write(reinterpret_cast <const char *>(&val),siz);
-    }
-
-    /* Just overwrite one object of any type.
-       Not that the cur pointer is not moved.*/
-    template <class _T>
-    void overwrite(const _T &val,size_t siz = sizeof(_T)) {
-        this->std::fstream::write(reinterpret_cast <const char *>(&val),siz);
-        seekp(-siz,std::ios::cur);
-    }
+    /* Basic overwrite of std::fstream functions */
+    template <class T>
+    void read(T &dst,size_t siz = sizeof(T));
+    template <class T>
+    void write(const T &src,size_t siz = sizeof(T));
+    void open(std::ios_base::openmode _mode);
 };
-
 ```
 
 LogWriter: Simply write logs.
 
 ```C++
 /* Custom log writer. */
-class LogWriter : public std::fstream{
+class LogWriter : private File {
   private:
-    FileName_t name;
+    File logInfo;
+    File tradeInfo;
+    std::string buffer;
   public:
-    LogWriter() = delete;
-    LogWriter(const char *_name) : name(_name) {}
-    LogWriter(const FileName_t &_name) : name(_name) {}
-    ~LogWriter() {}
-  
-    /* Just read one of any type.*/
-    template <class _T>
-    void read(_T *ptr) {
-        this->std::fstream::read(reinterpret_cast <char *>(ptr),sizeof(_T));
-    }
+    LogWriter();
 
-    /* Just write one object of any type.*/
-    template <class _T>
-    void write(const _T &val,size_t siz = sizeof(_T)) {
-        this->std::fstream::write(reinterpret_cast <const char *>(&val),siz);
-    }
+    /* Write a line of information.*/ 
 
+    template <class T,class ...V>
+    void writeLog(const T &msg,const V &...msgs);
+    template <class T,class ...V>
+    void writeTrade(const T &msg,const V &...msgs);
+
+    /* Output functions. */
+    Exception showLog() noexcept;
+    /* Write income and outcome. */
+    Exception add(double income,double outcome) noexcept;
+    /* Query last num trade.(Output with '\\n') */
+    Exception query(size_t num);
 };
-
 ```
 
-BlockList: Standard Data Container.
+BlockList: Standard Data Container.(Fully Commented)
 
 ```C++
-/**
- * Special Block List for Bookstore 
- * Data are stored in the following way:
- * 
- * nodeM <-> nodeM <-> nodeM <-> nodeM...
- *   |-> nodeL <-> nodeL <-> nodeL...
- *         |-> value_t
- * Free value_t nodes are stored.
- * 
-*/
 template <class key_t,class value_t>
 class BlockList {
-  private:
-    // using value_t  = BookBase;
-    // using key_t    = string <24>; // Debug use
+  private: 
+    /* Constants. */
 
- 
-    #define MIN_LEN  2
-    #define MAX_LEN  6
-    #define MAP_BIAS  8 + sizeof(nodeM) // Leave one vaccancy
-    #define LIST_BIAS 0 + sizeof(nodeL) // Leave one vaccancy
-    #define DATA_BIAS 0 
-    #define BLOCK_SIZ 7
+    #define MIN_SIZE   64
+    #define MAX_SIZE   255
+    #define MERGE_SIZE 224
+    #define BLOCK_SIZE 256
 
-    /* Node of the map. */
-    struct nodeM {
-        int nxt;   // next pointer
-        int pre;   // prev pointer
-        int index; // index of the list first node
-        int count; // count of the list nodes.
-        key_t key; // maximum key of the block
-        nodeM(key_t _k = "",int _n = -1,int _p = -1,int _i = -1,int _c = 0):
-            key(_k),nxt(_n),pre(_p),index(_i),count(_c) {}
-    };
+    /* Private structs. */
 
-    /* Node of the list. */
-    struct nodeL {
-        int nxt;   // next pointer
-        int pre;   // prev pointer
-        int index; // index of the data
-        key_t key; // key of the data
-        nodeL(key_t _k = "",int _n = -1,int _p = -1,int _i = -1):
-            key(_k),nxt(_n),pre(_p),index(_i) {}
-    };
+    struct pair_t; // Key-Value pair wrapping.
+    struct Header; // Only store necessary data.
+    using Node = pair_t[BLOCK_SIZE];
+    using Container = std::list <Header>; // Container of headers.
+    #define iterator typename Container::iterator
+  
+    /* Internal Variables. */
 
-    File <nodeM  ,MAP_BIAS > map ; // Map  of the nodes. 
-    File <nodeL  ,LIST_BIAS> list; // List of the nodes.
-    File <value_t,DATA_BIAS> data; // Data of the value.
-
-    friend class Iterator;
+    Container list;  // Container of header.
+    std::vector <int> memory; // Container of unused node index.
+    std::vector <Header> data; // Header Data
+    Node Node_cache1; // Cache
+    Node Node_cache2; // Cache
+    File nodeFile;    // Data only node File.
+    File listFile;    // Store list like a vector.
+    bool isNewNode;   // Whether to init a node.
 
   public:
+    /* Public types. */ 
+    using Return_Array = std::vector <value_t>;
 
-    /* Iterator of one node's value. */
-    class Iterator {
-      private:
-        BlockList *ptr; // Father BlockList
-        int index[3];   // map/list/data index
-      public:
-        /* Initialize. */
-        Iterator(BlockList *_ptr = nullptr,
-                 int idx1 = -1,int idx2 = -1,int idx3 = -1):
-            ptr(_ptr),index({idx1,idx2,idx3}) {} 
-        ~Iterator() = default;
-        /* Modify the value into val */
-        void modify(const value_t &val) {
-            ptr->data.locateO(index[2]);
-            ptr->data.write(val);
-        }
-        /* Record the value into val. */
-        void getValue(value_t &val) {
-            ptr->data.locateI(index[2]);
-            ptr->data.read(&val);
-        }
-        /* Test whether it's not null. */
-        operator void *() const{return ptr;}
-        /* Test whether it's null. */
-        bool operator !(void) const{return !ptr;}
-    };
+    /* (De-)Construction related. */
 
-    /* Forbidden! */
-    BlockList() = delete;
-    /* Provide names for 3 File_Manager. */
-    BlockList(const char *c1,const char *c2,const char *c3): 
-        map(c1),list(c2),data(c3) {
-        if(map.create()) {
-            map.seekg(0);
-            map.write(0);
-            map.write(-1);
-            nodeM tmp;
-            map.write(tmp);
-        }
-        if(list.create()) {
-            nodeL tmp;
-            map.write(tmp);
-        }
-        data.create();
-    }
-    /* Close File. */
-    ~BlockList() {
-        map.close();
-        list.close();
-        data.close();
-    }
+    BlockList(const char *path1,const char *path2);
+    ~BlockList();
 
+    /* Basic Functions. */
 
-    /* Modify given key to given val. */
-    void modify(const key_t &key,const value_t &val) {}
-    /* Modify given key to another key. */ 
-    void modify(const key_t &key,const key_t &val) {}
-    /* Erase "count" key-value pair.
-       True  if sucessfully erased.
-       False if not existed within. */
-    bool erase(const key_t &key,int count) {}
-    /* Return the iterator of key.
-       If not existed,it will return null-Iterator. */
-    Iterator find(const key_t &key) {}
+    bool empty() const;
+    /**
+     * @brief Tries to insert a key-value pair.
+     * @param key Key to be inserted.
+     * @param val Value to be inserted.
+     * 
+     * @return bool True if successfully inserted.
+     */
+    bool insert(const key_t &key,const value_t &val);
+    /**
+     * @brief Tries to modify a key-value pair's value. 
+     * Note that the value change shouldn't affect the 
+     * rank of the value.
+     * @param key Key to locate. 
+     * @param Mfunc Modify function.
+     * 
+     * @return bool True if successfully modified.
+     */
+    template <class Modify_Type>
+    bool modify_if(const key_t &key,Modify_Type Mfunc);
+    /**
+     * @brief Tries to modify key's value into val.
+     * Note that the value change shouldn't affect the 
+     * rank of the value.
+     * @param key Key to locate. 
+     * @param Mfunc Modify function.
+     * 
+     * @return bool True if successfully erased.
+     */
+    bool modify(const key_t &key,const value_t &val);
+    /**
+     * @brief Tries to erase a key-value pair.
+     * 
+     * @return bool True if successfully erased.
+     */
+    bool erase(const key_t &key,const value_t &val);
+    /**
+     * @brief Find all the values tied with given key.
+     * 
+     * @param key The key to match with.
+     * @param arr The answer vector where answer will be appended.
+     */
+    void findAll(const key_t &key,Return_Array &arr);
+    /* Print all elements.*/
+    template <class Print_Type = std::ostream>
+    void printAll(Print_Type &Pfunc = std::cout);
 
-    #undef MIN_LEN
-    #undef MAX_LEN
-    #undef MAP_BIAS
-    #undef LIST_BIAS
-    #undef DATA_BIAS
-    #undef BLOCK_SIZ
+    /* Undefine some unneccesary MACROs*/
+    #undef iterator
 };
-
-
 ```
 
 Book: Info of one book.
 
 ```C++
-
-/* Book without ISBN. */
-struct BookBase {
-
-    BookName_t Name;        // Name
-    Author_t   Author;      // Author
-    Keyword_t  Keyword[60]; // Keywords
-
-    size_t keywordNum;      // number of keywords
-    size_t quantity;        // quantitiy of books 
+struct Book {
+  public:
+    ISBN_t     ISBN;        // Internal standard book number.
+    BookName_t Name;        // Name of the book
+    Author_t   Author;      // Author's name
+    Keyword_t  Keyword;     // Keyword
+    size_t quantity;        // quantitiy of books
     double cost;            // cost of one book
-  
-    /* Simply clearing zero. */
-    BookBase() {memset(this,0,sizeof(*this));}
 
-    /* Normal copy. */
-    BookBase(const BookBase &_B) {memcpy(this,&_B,sizeof(_B));}
-    /* Normal assign. */
-    BookBase &operator =(const BookBase &_B) {
-        if(this != &_B) {memcpy(this,&_B,sizeof(_B));}
-        return *this;
-    }
-    /* Custom Output for a bookbase object. */
-    friend std::ostream &operator <<(std::ostream &os, const BookBase &book) {
-        os << book.Name   << '\t'
-           << book.Author << '\t'
-           << book.Keyword[0];
-        for(int i = 1; i < book.keywordNum; ++i)
-            os << '|' << book.Keyword[i];
-        return os << std::fixed << std::setprecision(2)
-                  << '\t' << book.cost << '\t' << book.quantity;
-    }
+    /* Basic functions. */
 
+    Book();
+    Book(const Book &rhs);
+    Book &operator =(const Book &rhs);
+    friend int Compare(const Book &lhs,const Book &rhs);
+    bool operator <(const Book &rhs) const;
+    friend std::ostream &operator <<(std::ostream &os, const Book &book);
+    void init(const char *__ISBN);
 };
-
-
 ```
 
 Account: Info of one user.
 
 ```C++
-
-/* Custom account. */
-class Account {
-  private:
-    UserID_t   ID;       // User ID
+struct Account {
+  public:
     UserName_t Name;     // User Name
     Password_t Password; // Password of the Account
     Level_t    Level;    // Priority Level
-    size_t     count;    // Times of log-in
 
-    friend class AccountSystem;
-  public:
+    /* Basic functions. */
 
-    /* Must provide params */
-    Account() = delete;
-  
-    /* Initialize function.*/
-    Account(const UserID_t &_I,const UserName_t& _N,
-            const Password_t &_P,Level_t _L,size_t _C):
-        ID(_I),Name(_N),Password(_P),Level(_L),count(_C) {}
+    Account() = default;
+    Account(const char * __N,const char *__P,Level_t __L);
+    void init(const char * __N,const char *__P,Level_t __L);
+    friend int Compare(const Account &lhs,const Account &rhs);
+    friend bool operator < (const Account &lhs,const Account &rhs);
 };
-
-
 ```
 
 BookSystem: Book Management system.
 
 ```C++
-
 class BookSystem {
   private:
-    BlockList <ISBN_t,BookBase> library;
+    BlockList <ISBN_t    ,Book>   libISBN;
+    BlockList <Author_t  ,ISBN_t> libAuthor;
+    BlockList <BookName_t,ISBN_t> libBookName;
+    BlockList <Keyword_t ,ISBN_t> libKeyword;
+    std::vector <Book>   arrB; // Book Return List;
+    std::vector <ISBN_t> arrI; // ISBN Return List
+    Book Book_cache1;
+    double tradeMoney; // Record last trade sum.
+
+    friend class commandManager;
+
   public:
+
     ~BookSystem() = default;
-    BookSystem(): library("book1.bin","book2.bin","book3.bin") {}
+    BookSystem();
 
-    /* Show by ISBN. */
-    void show(const ISBN_t &) {}
-    /* Show by non-ISBN. */
-    void show(const string <64> &,show_t opt){}
-    /* Remove elements.(buy books) */
-    void remove(const ISBN_t &,int count) {}
-    /* Select one book. */
-    void select(const ISBN_t &) {}
-    /* Modify with given params. */
-    void modify(const ISBN_t &,const BookBase &) {}
-    /* Import books with given quantity and cost */
-    void import(const ISBN_t &,size_t quantity,double cost) {}
-
+    Exception showAll() noexcept;
+    Exception showISBN(const ISBN_t &__I) noexcept;
+    Exception showAuthor(const Author_t &__A) noexcept;
+    Exception showBookName(const BookName_t &__B) noexcept;
+    Exception showKeyword(const Keyword_t &__K) noexcept;
+    Exception remove(const ISBN_t &__I,size_t __q);
+    Exception select(const ISBN_t &__I) noexcept;
+    Book &getBook(const ISBN_t &__I) noexcept;
+    Exception modify(const Book &__B,const std::bitset <6> &optMap);
+    Exception import(const ISBN_t & __I,size_t __q) noexcept;
 };
-
 ```
 
 AccountSystem: User Management system.
 
 ```C++
-
 class AccountSystem {
   private:
-    BlockList <UserID_t,Account> library;
-    struct User {  
-        int     index; // Index in the vector
-        Level_t Level; // Level of the people
-        ISBN_t  ISBN;  // The ISBN of book selected
-    };
-    // std::stack <User,std::vector<User>> stack;
-
-    std::vector <User> stack; // User stack.
-
+    struct User;
+    std::vector <User>             stack; // User stack.
+    std::map <UserID_t,size_t>   instack; // Count of user in stack.
+    std::vector <Account>            arr; // Return array of Account.
+    BlockList <UserID_t,Account> library; // Account library
+    Account Account_cache1;
+    friend class commandManager;
+    std::string tmpString; // Temperary string
   public:
-    /* Just clear the user stack. */
-    ~AccountSystem() = default;
-    /* Just do nothing.*/
-    AccountSystem(): library("user1.bin","user2.bin","user3.bin") {}
 
-    /* Log in an account. */
-    void login(const UserID_t &,const Password_t &){}
-    /* Log out an account. */
-    void logout(){}
-    /* Register an account. */
-    void registering(const UserID_t &,
-                     const Password_t &,
-                     const UserName_t &){}
-    /* Change an account's password. */
-    void changePassword(const UserID_t &,
-                        const Password_t &,
-                        const Password_t &){}
-    /* Add a new user. */
-    void insert(const UserID_t &,
-                const Password_t &
-                Level_t,
-                const UserName_t &){}
-    /* Remove a user. */
-    void remove(const UserID_t &){}
+    /* Basic functions. */
+
+    ~AccountSystem() = default;
+    AccountSystem();
+
+    Exception login(const UserID_t &__ID,const Password_t &__PWD);
+    Exception login(const UserID_t &__ID);
+    Exception logout();
+    Exception registering(const UserID_t &__ID,const Password_t &__PWD,const UserName_t &__Name);
+    Exception changePassword(const UserID_t &__ID,const Password_t &__OLD,const Password_t &__NEW);
+    Exception changePassword(const UserID_t &__ID,const Password_t &__NEW);
+    Exception addUser(const UserID_t &__ID,const Password_t &__PWD,Level_t __L,const UserName_t &__Name);
+    Exception removeUser(const UserID_t &__ID);
+    Exception select(const ISBN_t &__I);
+
+    /* Other functions.*/
+
+    void modifyISBN(const ISBN_t &__OLD,const ISBN_t &__NEW);
+    inline std::string currentUser() const;
+    inline bool checkLevel(int __MIN) const noexcept;
+    inline ISBN_t *selected() noexcept;
 };
 
 ```
@@ -484,36 +370,76 @@ commandManager: Managing input commands.
 
 ```C++
 class commandManager {
-    LogWriter log;
-    BookSystem books;
-    AccountSystem users;
+  private:
+    #define MAXN 512
+    std::string input;       // Input buffer.
+    std::string token[MAXN]; // Maximum string number.
+    size_t count;            // Count of tokens
+    BookSystem    Library;
+    AccountSystem Users;
+    LogWriter     Hastin;   // I invited Hastin as my log writer.
   public:
-    ~commandManager() {}
-    commandManager():log("dark.log") {}
-    bool runCommand() {}
+    commandManager();
+    bool runCommand();
 };
 ```
 
-main(): Just read commands and work.
+main(): Just create dictionary , read commands and work.
 
 ```C++
 signed main() {
-    dark::commandManager _C;
-    while(_C.runCommand());
+    std::filesystem::create_directory("bin");
+    dark::commandManager Conless; // I love Conless! So I invited Conless as my manager.
+    while(Conless.runCommand());
     return 0;
 }
 ```
 
-Storage Info:
-book1.bin: map  nodes info
-book2.bin: list nodes info
-book3.bin: data holder of bookbase
+### Storage Info:
 
-user1.bin: map  nodes info
-user2.bin: list nodes info
-user3.bin: data holder of user
+User Info:(1 BlockList)
+--- bin/u1.bin
+--- bin/u2.bin
 
-dark.log: custom log file
+Book Info:(4 BlockLists)
+--- bin/b1.bin
+--- bin/b2.bin
+--- bin/b3.bin
+--- bin/b4.bin
+--- bin/b5.bin
+--- bin/b6.bin
+--- bin/b7.bin
+--- bin/b8.bin
+
+Log Info:
+--- bin/Hastin.log: Finance Sum
+--- bin/Conless.log: Operation Log
+--- bin/Dark.log: Finance Log
 
 Update History:
 22/12/07 : First Draft.
+23/01/05 : Second Draft. Clarify the functions.
+
+### Features
+
+1. The log is written in readable language. You can directly read the log at bin/Conless.log. You can safely clear bin/Conless.log and bin/Dark.log if you are short of disk space. The format is of log as below:
+    1. Strings are protected within "".
+    2. Numbers are directly written down. All prices keep two decimals (e.g 1919810.00,11451.40). 
+    3. Special nouns like User,ISBN... are protected within \$\$. By the way,Users should (not must) avoid using the character \$ in their Password or UserName.
+    4. If currently no one has logged in,the current \$User\$ will be \$Somebody not logged in\$.
+    5. When the User exit the system.It will write an additional log recording the process of poping the User stack,written as \$User\$ logout.
+2. Add ``` #define DARK_ERROR true ``` at the beginning of main.cpp and a relatively more specified error info will be written.
+3. The BlockList provides an extra modify_if functions.Users can provide a function: ```Mfunc``` , to help manipulate the internal data. As long as the value matched by key satisfies ```Mfunc(value) == true```,the modify_if will return true. You should integrate judgement function and modify function into Mfunc.Example:
+```C++
+BlockList list;
+value_t target;
+value_t newval;
+list.modify_if(key,[&](value_t &val)->bool
+{
+    if(val != target) return false; // No modification.
+    val = newval;
+    return true;
+})
+/* NOTICE: The modification shouldn't change the ranking of the value. */
+```
+

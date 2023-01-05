@@ -4,6 +4,10 @@
 #include <string>
 #include <iostream>
 
+#ifndef DARK_ERROR
+    #define DARK_ERROR false
+#endif
+
 namespace dark {
 
 class Exception {
@@ -28,11 +32,12 @@ class Exception {
     bool test() const {return isException;}
     /* Change to bool and write exception message. */
     operator bool() const{
-        // static size_t count = 0;
         if(isException == 1ULL)
-            std::cout 
-                << "Invalid\n";
-                // << count++ << ':' <<  message << '\n';
+        #if DARK_ERROR == 0
+            std::cout << "Invalid\n";
+        #else
+            std::cout << message << '\n';
+        #endif
         return ~isException;
     }
 };
