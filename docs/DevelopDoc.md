@@ -7,7 +7,7 @@
 ### File Structure
 ```
 ©À©¤©¤ RUBBISH_BOOKSTORE_SYSTEM
-©¦?? ©À©¤©¤ doc
+©¦?? ©À©¤©¤ docs
 ©¦?? ©¦   ©¸©¤©¤ DevelopDoc.md
 ©¦?? ©À©¤©¤ src
 ©¦?? ©¦?? ©À©¤©¤ account.hpp
@@ -21,8 +21,8 @@
 ©¦?? ©¦?? ©À©¤©¤ system.hpp
 ©¦?? ©¦   ©¸©¤©¤ utils.hpp
 ©¦?? ©À©¤©¤ CMakeLists.txt
-©¦?? ©À©¤©¤ README.md
-©¦?? ©¸©¤©¤ main.cpp
+©¦?? ©À©¤©¤ main.cpp
+©¦?? ©¸©¤©¤ README.md
 ```
 
 ### Code Standard
