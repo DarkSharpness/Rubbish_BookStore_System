@@ -1,6 +1,6 @@
 ## Project Name : Rubbish_BookStore_System
 
-## Author : DarkSharpness
+## Author : [DarkSharpness](https://github.com/DarkSharpness)
 
 ---
 
@@ -416,10 +416,6 @@ Log Info:
 --- bin/Conless.log: Operation Log
 --- bin/Dark.log: Finance Log
 
-Update History:
-22/12/07 : First Draft.
-23/01/05 : Second Draft. Clarify the functions.
-
 ### Features
 
 1. The log is written in readable language. You can directly read the log at bin/Conless.log. You can safely clear bin/Conless.log and bin/Dark.log if you are short of disk space. The format is of log as below:
@@ -431,7 +427,8 @@ Update History:
 2. Add ``` #define DARK_ERROR true ``` at the beginning of main.cpp and a relatively more specified error info will be written.
 3. The BlockList provides an extra modify_if functions.Users can provide a function: ```Mfunc``` , to help manipulate the internal data. As long as the value matched by key satisfies ```Mfunc(value) == true```,the modify_if will return true. You should integrate judgement function and modify function into Mfunc.Example:
 ```C++
-BlockList list;
+BlockList <key_t,value_t> list;
+key_t   key;
 value_t target;
 value_t newval;
 list.modify_if(key,[&](value_t &val)->bool
@@ -442,4 +439,6 @@ list.modify_if(key,[&](value_t &val)->bool
 })
 /* NOTICE: The modification shouldn't change the ranking of the value. */
 ```
-
+### Update History:
+22/12/07 : First Draft.
+23/01/05 : Second Draft. Clarify the functions.
