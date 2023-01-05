@@ -314,9 +314,9 @@ class commandManager {
                 info += "\",";
             }
             if(optMap.test(5)) {
-                info += "new $Price$: \"";
+                info += "new $Price$: ";
                 info += doubleToString(tmp.cost);
-                info += "\",";
+                info += ",";
             }
             info.back() = '.';
 
