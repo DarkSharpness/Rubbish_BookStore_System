@@ -47,8 +47,8 @@ What's more,all source codes are in header-only files, which means you can direc
 
 1. Read a line of command by commandManager.
 2. CommandManager analyzes the input command and therefore perform it.
-    1. Book Command: Check with AccountSystem with Level or book selected first. Then turn to BookSystem. Use logWriter
-    2. User Command: Turn to AccountSystem directly.
+    1. Book Command: Check with AccountSystem with Level or book selected first. Then turn to BookSystem. Use LogWriter to write Logs.
+    2. User Command: Turn to AccountSystem directly. Use LogWriter to write Logs.
     3. Log Command: Turn to Logwriter directly.
 3. CommandManager returns an Exception class. When the Exception object is forced to change into bool, it will first print out the Exception message inside(if exception did happen). In this way, I avoid the costly process of throw and try catch in C++.
 
