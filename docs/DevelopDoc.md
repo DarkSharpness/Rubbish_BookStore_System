@@ -434,8 +434,8 @@ Log Info:
     1. Strings are protected within "".
     2. Numbers are directly written down. All prices keep two decimals (e.g 1919810.00,11451.40). 
     3. Special nouns like User,ISBN... are protected within \$\$. By the way,Users should (not must) avoid using the character \$ in their Password or UserName.
-    4. If currently no one has logged in,the current \$User\$ will be \$Somebody not logged in\$.
-    5. When the User exit the system.It will write an additional log recording the process of poping the User stack,written as \$User\$ logout.
+    4. If currently no one has logged in,the current \$ User \$ will be \$ Somebody not logged in \$.
+    5. When the User exit the system.It will write an additional log recording the process of poping the User stack,written as \$ User \$ logout.
 2. Add ``` #define DARK_ERROR true ``` at the beginning of main.cpp and a relatively more specified error info will be written.
 3. The BlockList provides an extra modify_if functions.Users can provide a function: ```Mfunc``` , to help manipulate the internal data. As long as the value matched by key satisfies ```Mfunc(value) == true```,the modify_if will return true. You should integrate judgement function and modify function into Mfunc.Example:
 ```C++
