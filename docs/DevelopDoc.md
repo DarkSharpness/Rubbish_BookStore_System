@@ -43,7 +43,7 @@ class string {
   public:
     /* Basic construction functions. */
 
-    string() {}
+    string();
     string(std::nullptr_t);
     string(const char *ptr);
 
@@ -109,9 +109,8 @@ class File : public std::fstream {
   private:
     FileName_t name;
   public:
-    File() = delete;
     File(const char *_name): name(_name) {}
-    ~File() = default;
+    ~File();
 
     /* Try creating a new file.
        0 if success || 1 if existed.  */
@@ -249,7 +248,7 @@ class BlockList {
 };
 ```
 
-Book: Info of one book.
+Book: Information of one book.
 
 ```C++
 struct Book {
@@ -273,7 +272,7 @@ struct Book {
 };
 ```
 
-Account: Info of one user.
+Account: Information of one user.
 
 ```C++
 struct Account {
@@ -284,7 +283,7 @@ struct Account {
 
     /* Basic functions. */
 
-    Account() = default;
+    Account();
     Account(const char * __N,const char *__P,Level_t __L);
     void init(const char * __N,const char *__P,Level_t __L);
     friend int Compare(const Account &lhs,const Account &rhs);
@@ -310,7 +309,7 @@ class BookSystem {
 
   public:
 
-    ~BookSystem() = default;
+    ~BookSystem();
     BookSystem();
 
     Exception showAll() noexcept;
@@ -343,7 +342,7 @@ class AccountSystem {
 
     /* Basic functions. */
 
-    ~AccountSystem() = default;
+    ~AccountSystem();
     AccountSystem();
 
     Exception login(const UserID_t &__ID,const Password_t &__PWD);
@@ -398,22 +397,35 @@ signed main() {
 ### Storage Info:
 
 User Info:(1 BlockList)
+
 --- bin/u1.bin
+
 --- bin/u2.bin
 
 Book Info:(4 BlockLists)
+
 --- bin/b1.bin
+
 --- bin/b2.bin
+
 --- bin/b3.bin
+
 --- bin/b4.bin
+
 --- bin/b5.bin
+
 --- bin/b6.bin
+
 --- bin/b7.bin
+
 --- bin/b8.bin
 
 Log Info:
+
 --- bin/Hastin.log: Finance Sum
+
 --- bin/Conless.log: Operation Log
+
 --- bin/Dark.log: Finance Log
 
 ### Features
@@ -441,4 +453,5 @@ list.modify_if(key,[&](value_t &val)->bool
 ```
 ### Update History:
 22/12/07 : First Draft.
+
 23/01/05 : Second Draft. Clarify the functions.
