@@ -4,6 +4,27 @@
 
 ---
 
+### File Structure
+```
+©À©¤©¤ RUBBISH_BOOKSTORE_SYSTEM
+©¦?? ©À©¤©¤ doc
+©¦?? ©¦   ©¸©¤©¤ DevelopDoc.md
+©¦?? ©À©¤©¤ src
+©¦?? ©¦?? ©À©¤©¤ account.hpp
+©¦?? ©¦?? ©À©¤©¤ blocklist.hpp
+©¦?? ©¦?? ©À©¤©¤ book.hpp
+©¦?? ©¦?? ©À©¤©¤ command.hpp
+©¦?? ©¦?? ©À©¤©¤ exception.hpp
+©¦?? ©¦?? ©À©¤©¤ fileio.hpp
+©¦?? ©¦?? ©À©¤©¤ log.hpp
+©¦?? ©¦?? ©À©¤©¤ string.hpp
+©¦?? ©¦?? ©À©¤©¤ system.hpp
+©¦?? ©¦   ©¸©¤©¤ utils.hpp
+©¦?? ©À©¤©¤ CMakeLists.txt
+©¦?? ©À©¤©¤ README.md
+©¦?? ©¸©¤©¤ main.cpp
+```
+
 ### Code Standard
 
 Most of the code will obey the following rules.
@@ -451,6 +472,7 @@ list.modify_if(key,[&](value_t &val)->bool
 })
 /* NOTICE: The modification shouldn't change the ranking of the value. */
 ```
+
 ### Update History:
 22/12/07 : First Draft.
 
