@@ -5,9 +5,7 @@ build/
 docs/README.md
 docs/requirements.md
 docs/bonus.md
-docs/note.md
 test/
 .vscode/
 pretasks
-bookstore-testcases/
 bin/
