@@ -453,7 +453,7 @@ Log Info:
 
 1. The log is written in readable language. You can directly read the log at bin/Conless.log. You can safely clear bin/Conless.log and bin/Dark.log if you are short of disk space. The format of log is as below:
     1. Strings are protected within "" (e.g "P@ssW0rd").
-    2. Numbers are directly written down. All prices keep two decimals (e.g 1919810.00,11451.40). 
+    2. Numbers are directly written down. All prices keep two decimals (e.g 1919810.00,11451.40).
     3. Special nouns like User,ISBN... are protected within \$\$. By the way,Users should (not must) avoid using the character \$ in their Password or UserName or in other strings.
     4. If currently no one has logged in,the current \$ User \$ will be \$ Somebody not logged in \$.
     5. When the User exit the system.It will write an additional log recording the process of poping the User stack,written as \$ User \$ logout.
