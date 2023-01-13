@@ -165,6 +165,7 @@ inline bool isValidKeyword(const char *str) {
     int count  = 0;
     int length = 0; 
     while(*str) {
+        ++count;
         if(*str == '|') {
             if(!length) return false;
             length = 0;
@@ -172,7 +173,7 @@ inline bool isValidKeyword(const char *str) {
             continue;
         }
         if(isVisibleChar(*str) && *str != '\"') {
-            ++str,++count,++length;
+            ++str,++length;
             continue;
         }
         return false;
